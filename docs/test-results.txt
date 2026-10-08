@@ -54,6 +54,6 @@ test_mixed_text_uses_dominant_direction (test_direction.DirectionTests.test_mixe
 test_persian_arabic_and_english (test_direction.DirectionTests.test_persian_arabic_and_english) ... ok
 
 ----------------------------------------------------------------------
-Ran 54 tests in 0.651s
+Ran 54 tests in 0.677s
 
 OK

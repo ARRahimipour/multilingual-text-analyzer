@@ -3,6 +3,7 @@ from pathlib import Path
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, messagebox, ttk
+from tkinter import font as tkfont
 from tkinter.scrolledtext import ScrolledText
 from .core import AnalysisOptions, analyze
 from .direction import align_editor
@@ -16,11 +17,17 @@ class AnalyzerWindow:
         self.pending = None
         self.result = None
         self.input_path = None
-        root.title('NLP Text Analyzer v1.2.0 | ARRahimipour')
+        root.title('NLP Text Analyzer v1.2.1 | ARRahimipour')
         root.geometry('1180x880')
         root.minsize(850, 760)
         root.configure(background='#f2f5f9')
-        style = ttk.Style(root)
+        available_fonts = {name.casefold(): name for name in tkfont.families(root)}
+        default_family = tkfont.nametofont('TkDefaultFont').actual('family')
+        family = next((available_fonts[name.casefold()] for name in
+                       ('Tahoma', 'Segoe UI', 'Arial') if name.casefold() in available_fonts), default_family)
+        self.content_font = tkfont.Font(root=root, family=family, size=15)
+        self.table_font = tkfont.Font(root=root, family=family, size=15)
+        self.style = style = ttk.Style(root)
         style.theme_use('clam')
         style.configure('TFrame', background='#f2f5f9')
         style.configure('TLabel', background='#f2f5f9', foreground='#192637', font=('Arial', 11))
@@ -28,7 +35,14 @@ class AnalyzerWindow:
         style.configure('Metric.TLabel', font=('Arial', 23, 'bold'), foreground='#176b61')
         style.configure('TButton', padding=(12, 8), font=('Arial', 10))
         style.configure('TCheckbutton', background='#f2f5f9')
-        style.configure('Treeview', rowheight=29, font=('Arial', 11))
+        style.configure('Words.Treeview', rowheight=max(42, self.table_font.metrics('linespace') + 18),
+                        font=self.table_font, foreground='#142337', background='#ffffff',
+                        fieldbackground='#ffffff')
+        style.configure('Words.Treeview.Heading', font=(family, 11, 'bold'), padding=(10, 8))
+        # Give right-aligned text breathing room inside every cell.
+        style.layout('Words.Treeview.Item', [('Treeitem.padding', {'sticky': 'nswe',
+                     'children': [('Treeitem.text', {'sticky': 'nswe'})]})])
+        style.configure('Words.Treeview.Item', padding=(12, 5))
         outer = ttk.Frame(root, padding=24)
         outer.pack(fill='both', expand=True)
         ttk.Label(outer, text='Language, counted.', style='Title.TLabel').pack(anchor='w')
@@ -38,6 +52,9 @@ class AnalyzerWindow:
         for label, command in [('Open text', self.open_file), ('Load sample', self.load_sample),
                                ('Export report', self.export), ('Clear', self.clear)]:
             ttk.Button(toolbar, text=label, command=command).pack(side='left', padx=(0, 8))
+        ttk.Button(toolbar, text='A−', width=4, command=lambda: self.resize_text(-1)).pack(side='right')
+        ttk.Button(toolbar, text='A+', width=4, command=lambda: self.resize_text(1)).pack(side='right', padx=6)
+        ttk.Label(toolbar, text='Text size').pack(side='right', padx=6)
         self.case = tk.BooleanVar(value=False)
         self.persian = tk.BooleanVar(value=False)
         self.numbers = tk.BooleanVar(value=False)
@@ -64,7 +81,7 @@ class AnalyzerWindow:
         panels.add(left, weight=3)
         panels.add(right, weight=2)
         ttk.Label(left, text='INPUT TEXT · UTF-8').pack(anchor='w', pady=(0, 8))
-        self.editor = ScrolledText(left, wrap='word', undo=True, font=('Arial', 12),
+        self.editor = ScrolledText(left, wrap='word', undo=True, font=self.content_font,
                                    relief='flat', padx=14, pady=14, width=44, height=12,
                                    background='white', foreground='#192637', insertbackground='#176b61')
         self.editor.pack(fill='both', expand=True, padx=(0, 14))
@@ -72,10 +89,11 @@ class AnalyzerWindow:
         self.editor.tag_configure('ltr', justify='left')
         self.editor.bind('<<Modified>>', self.on_modified)
         ttk.Label(right, text='TOP 10 WORDS').pack(anchor='w', pady=(0, 8))
-        self.table = ttk.Treeview(right, columns=('rank', 'word', 'count'), show='headings', height=10)
-        for column, width in [('rank', 45), ('word', 180), ('count', 65)]:
+        self.table = ttk.Treeview(right, columns=('rank', 'word', 'count'), show='headings', height=10, style='Words.Treeview')
+        for column, width in [('rank', 65), ('word', 200), ('count', 85)]:
             self.table.heading(column, text=column.title())
-            self.table.column(column, width=width, minwidth=40, anchor='center' if column != 'word' else 'w')
+            self.table.column(column, width=width, minwidth=width, stretch=(column == 'word'), anchor='center' if column != 'word' else 'w')
+        self.table.tag_configure('alternate', background='#f2f6fa')
         scrollbar = ttk.Scrollbar(right, orient='vertical', command=self.table.yview)
         self.table.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right', fill='y')
@@ -102,6 +120,12 @@ class AnalyzerWindow:
         root.bind('<Control-s>', lambda event: self.export())
         self.refresh()
 
+    def resize_text(self, delta):
+        size = max(11, min(24, int(self.table_font.cget('size')) + delta))
+        self.content_font.configure(size=size)
+        self.table_font.configure(size=size)
+        self.style.configure('Words.Treeview', rowheight=max(42, self.table_font.metrics('linespace') + 18))
+
     def on_modified(self, event=None):
         if self.editor.edit_modified():
             self.editor.edit_modified(False)
@@ -127,7 +151,8 @@ class AnalyzerWindow:
         for item in self.table.get_children():
             self.table.delete(item)
         for index, row in enumerate(self.result.top_words, 1):
-            self.table.insert('', 'end', values=(index, row['word'], row['count']))
+            self.table.insert('', 'end', values=(index, row['word'], row['count']),
+                              tags=('alternate',) if index % 2 == 0 else ())
         status = 'Analysis complete · No word-count limit'
         if self.result.warnings:
             status += ' | ' + self.result.warnings[0]

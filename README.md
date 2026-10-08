@@ -26,6 +26,10 @@ python main.py --gui
 
 Click **Load sample**, paste your own text, or use **Open text**. Metrics update automatically. **Export report** saves HTML, JSON, CSV, or plain text. Ctrl+O opens a file; Ctrl+S exports. A graphical desktop and a Python installation with Tk are required. If your Linux Python lacks Tk, install your distribution's Python Tk package (often `python3-tk`). The CLI works without Tk. Complex script rendering in Tk depends on the operating system; the HTML report uses browser text shaping and automatic text direction.
 
+### Readable desktop text
+
+Version 1.2.1 prefers an installed Tahoma font, then Segoe UI, Arial, or the system default. Input and table text start at 15 points. Use **A+** and **A−** to adjust both between 11 and 24 points. Table row height follows the font size; alternating row backgrounds and fixed-width rank/count columns make the word column easier to scan.
+
 ### Automatic text alignment
 
 Version 1.2.0 aligns Persian/Arabic paragraphs to the right and English paragraphs to the left as you type, paste, or load a file. Unicode strong-character direction determines alignment; numbers and punctuation do not override it. Mixed paragraphs use the majority direction, with the first strong character breaking ties. The word column follows the overall text direction. HTML sentences and word cells use explicit directions and logical alignment.

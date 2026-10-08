@@ -53,3 +53,7 @@ Additional regression tests cover several quote styles, actual quoted speech, an
 ## Version 1.2.0 automatic alignment
 
 Direction detection tests cover Persian, Arabic, English, numbers, mixed text, and ties. Mock-widget checks verify paragraph tags, clearing/reset behavior, and no text/cursor mutation. HTML checks verify explicit direction and logical alignment. These checks do not replace an actual desktop visual test; Tk remains unavailable in this environment.
+
+## Version 1.2.1 readability update
+
+Replaced the small table font with a 15-point installed-font preference, dynamic row height, cell padding, and alternating row backgrounds. Added bounded text-size controls and fixed-width numeric columns. The 54 existing analysis/report tests still pass and Python compilation succeeds. Desktop font availability and actual Windows/Tk rendering must be checked locally; no visual desktop verification was possible here.
