@@ -1,4 +1,4 @@
-# Verification record — v1.3.1
+# Verification record — v1.3.2
 
 Date: 2026-10-08. Python 3.12.14, Linux, PySide6 Essentials 6.8.3.
 
@@ -48,3 +48,11 @@ For v1.3.1, a fresh `.venv` was created with `setup_env.py` and the pinned requi
 - `.venv` is ignored by Git and excluded from the archive.
 
 Windows PowerShell/CMD commands have been reviewed but not executed on Windows. Existing commit timestamps are retained. New commits use the actual commit time and the requested author/committer identity.
+
+## Version 1.3.2: physical right-edge alignment
+
+The earlier tests checked RTL direction and clipping but missed physical alignment. A short Persian sentence reproduced the bug: its rendered text began at the left edge despite RTL block direction. Qt mirrors relative AlignRight in an RTL block. The fix combines AlignAbsolute with the desired edge.
+
+Two new geometry tests measure the rendered text rectangle against the available line rectangle: short Persian/Arabic lines reach the right edge, English reaches the left edge, and the last line of a wrapped Persian paragraph stays right-aligned at two window widths. All 62 tests passed inside .venv, including eight Qt tests. A rendered mixed-language preview was inspected: Persian/Arabic appeared on the right and English on the left. Windows remains untested directly.
+
+Reference: https://doc.qt.io/qt-6/qt.html#AlignmentFlag-enum

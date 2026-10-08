@@ -101,7 +101,7 @@ For command-line-only use, `python setup_env.py --cli-only` creates the environm
 
 ## Using the desktop
 
-Open the application with `python run_gui.py`. The window title should show **v1.3.1**.
+Open the application with `python run_gui.py`. The window title should show **v1.3.2**.
 
 1. Choose **Open text**, paste a passage, or select **Load sample**.
 2. Read the four totals above the editor and the frequency table on the right.
@@ -194,7 +194,7 @@ From the activated environment:
 python -m unittest discover -s tests -v
 ```
 
-There are 60 tests covering token counts, normalization, quoted punctuation, exports, invalid input, arbitrary input lengths, and the Qt editor. Six tests exercise real Qt widgets in offscreen mode; without Qt, those six are skipped. The suite sets offscreen mode for GUI tests so a visible desktop is not required.
+There are 62 tests covering token counts, normalization, quoted punctuation, exports, invalid input, arbitrary input lengths, and the Qt editor. Eight tests exercise real Qt widgets in offscreen mode; without Qt, those eight are skipped. The suite sets offscreen mode for GUI tests so a visible desktop is not required.
 
 See [verification details](docs/VERIFICATION.md) and the captured [test output](docs/test-results.txt). The current release was checked in an isolated Python 3.12 environment on Linux. Windows installation commands are documented but have not been run here.
 

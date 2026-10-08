@@ -18,7 +18,7 @@ class AnalyzerWindow(QWidget):
         self.input_path = None
         self.result = None
         self.font_size = 15
-        self.setWindowTitle('NLP Text Analyzer v1.3.1 | ARRahimipour')
+        self.setWindowTitle('NLP Text Analyzer v1.3.2 | ARRahimipour')
         self.resize(1180, 880)
         self.setMinimumSize(850, 720)
         families = {f.casefold(): f for f in QFontDatabase.families()}
@@ -111,6 +111,8 @@ class AnalyzerWindow(QWidget):
             rtl = (text_direction(text) if any(c.isalpha() for c in text) else dominant) == 'rtl'
             direction = Qt.LayoutDirection.RightToLeft if rtl else Qt.LayoutDirection.LeftToRight
             alignment = Qt.AlignmentFlag.AlignRight if rtl else Qt.AlignmentFlag.AlignLeft
+            # Use physical edges: Qt otherwise mirrors AlignRight in RTL blocks.
+            alignment |= Qt.AlignmentFlag.AlignAbsolute
             fmt = block.blockFormat()
             if fmt.layoutDirection() != direction or fmt.alignment() != alignment:
                 fmt.setLayoutDirection(direction); fmt.setAlignment(alignment)
@@ -143,7 +145,7 @@ class AnalyzerWindow(QWidget):
                 alignment = Qt.AlignmentFlag.AlignCenter
                 if column == 1:
                     alignment = Qt.AlignmentFlag.AlignRight if text_direction(str(value)) == 'rtl' else Qt.AlignmentFlag.AlignLeft
-                    alignment |= Qt.AlignmentFlag.AlignVCenter
+                    alignment |= Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignAbsolute
                 item.setTextAlignment(alignment); self.table.setItem(index, column, item)
         self.status.setText('Analysis complete · No word-count limit' +
                             (' | ' + self.result.warnings[0] if self.result.warnings else ''))

@@ -76,6 +76,33 @@ class DesktopTests(unittest.TestCase):
             self.assertGreaterEqual(bounds.left() + rect.left(), 0)
             self.assertLessEqual(bounds.right() + rect.left(), self.window.editor.viewport().width())
 
+    def test_short_lines_reach_the_correct_physical_edge(self):
+        self.window.show()
+        for text, rtl in [('سلام دنیا.', True), ('مرحبا بالعالم.', True), ('Hello world.', False)]:
+            with self.subTest(text=text):
+                self.window.set_text(text)
+                self.app.processEvents()
+                line = self.window.editor.document().begin().layout().lineAt(0)
+                actual = line.naturalTextRect()
+                available = line.rect()
+                if rtl:
+                    self.assertAlmostEqual(actual.right(), available.right(), delta=1.0)
+                    self.assertGreater(actual.left(), available.left() + 50)
+                else:
+                    self.assertAlmostEqual(actual.left(), available.left(), delta=1.0)
+
+    def test_wrapped_paragraph_last_line_is_right_aligned_after_resize(self):
+        self.window.show()
+        text = 'پردازش زبان طبیعی برای تحلیل متن فارسی استفاده می‌شود. ' * 5
+        for width in (900, 1180):
+            self.window.resize(width, 800)
+            self.window.set_text(text)
+            self.app.processEvents()
+            layout = self.window.editor.document().begin().layout()
+            self.assertGreater(layout.lineCount(), 1)
+            last = layout.lineAt(layout.lineCount() - 1)
+            self.assertAlmostEqual(last.naturalTextRect().right(), last.rect().right(), delta=1.0)
+
     def test_zoom_bounds(self):
         self.window.resize_text(100)
         self.assertEqual(self.window.font_size, 24)

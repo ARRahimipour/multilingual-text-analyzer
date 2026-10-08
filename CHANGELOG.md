@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.2
+
+- Fixed RTL paragraphs being visually left-aligned by using absolute edge alignment.
+- Added geometry tests for short lines and wrapped paragraphs after resizing.
+- Verified all 62 tests and refreshed the desktop preview.
+
 ## 1.3.1
 
 - Added a project-local virtual environment setup helper.
