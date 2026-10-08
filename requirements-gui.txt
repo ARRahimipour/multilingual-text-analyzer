@@ -1,0 +1,3 @@
+# Optional Qt desktop dependency; provides the PySide6 modules used here.
+# The CLI needs only the Python standard library.
+PySide6-Essentials>=6.8.3,<7

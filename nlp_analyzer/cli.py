@@ -31,7 +31,7 @@ def main(argv=None):
             from .gui import launch
             launch()
         except (ImportError, RuntimeError) as exc:
-            parser.exit(2, f'Desktop interface unavailable: {exc}\nUse the CLI or install Python with Tk support.\n')
+            parser.exit(2, f'Desktop interface unavailable: {exc}\nUse the CLI or install the desktop dependency: python -m pip install -r requirements-gui.txt\n')
         return 0
     try:
         if args.file and args.output and args.file.resolve() == args.output.resolve():

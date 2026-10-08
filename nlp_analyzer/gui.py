@@ -1,216 +1,194 @@
-"""Offline desktop interface built with the standard Tk toolkit."""
+"""Qt desktop interface with native bidirectional text layout."""
 from pathlib import Path
-import tkinter as tk
-import webbrowser
-from tkinter import filedialog, messagebox, ttk
-from tkinter import font as tkfont
-from tkinter.scrolledtext import ScrolledText
+import sys
+from PySide6.QtCore import Qt, QTimer, QSignalBlocker
+from PySide6.QtGui import QFont, QFontDatabase, QTextCursor, QKeySequence, QShortcut
+from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+    QLabel, QPushButton, QCheckBox, QTextEdit, QTableWidget, QTableWidgetItem,
+    QHeaderView, QSplitter, QFileDialog, QMessageBox, QAbstractItemView)
 from .core import AnalysisOptions, analyze
-from .direction import align_editor
+from .direction import text_direction
 from .reports import render_report
 from .identity import AUTHOR_LINES, AUTHOR_EMAIL, AUTHOR_WEBSITE
 
 
-class AnalyzerWindow:
-    def __init__(self, root):
-        self.root = root
-        self.pending = None
-        self.result = None
+class AnalyzerWindow(QWidget):
+    def __init__(self):
+        super().__init__()
         self.input_path = None
-        root.title('NLP Text Analyzer v1.2.1 | ARRahimipour')
-        root.geometry('1180x880')
-        root.minsize(850, 760)
-        root.configure(background='#f2f5f9')
-        available_fonts = {name.casefold(): name for name in tkfont.families(root)}
-        default_family = tkfont.nametofont('TkDefaultFont').actual('family')
-        family = next((available_fonts[name.casefold()] for name in
-                       ('Tahoma', 'Segoe UI', 'Arial') if name.casefold() in available_fonts), default_family)
-        self.content_font = tkfont.Font(root=root, family=family, size=15)
-        self.table_font = tkfont.Font(root=root, family=family, size=15)
-        self.style = style = ttk.Style(root)
-        style.theme_use('clam')
-        style.configure('TFrame', background='#f2f5f9')
-        style.configure('TLabel', background='#f2f5f9', foreground='#192637', font=('Arial', 11))
-        style.configure('Title.TLabel', font=('Arial', 26, 'bold'))
-        style.configure('Metric.TLabel', font=('Arial', 23, 'bold'), foreground='#176b61')
-        style.configure('TButton', padding=(12, 8), font=('Arial', 10))
-        style.configure('TCheckbutton', background='#f2f5f9')
-        style.configure('Words.Treeview', rowheight=max(42, self.table_font.metrics('linespace') + 18),
-                        font=self.table_font, foreground='#142337', background='#ffffff',
-                        fieldbackground='#ffffff')
-        style.configure('Words.Treeview.Heading', font=(family, 11, 'bold'), padding=(10, 8))
-        # Give right-aligned text breathing room inside every cell.
-        style.layout('Words.Treeview.Item', [('Treeitem.padding', {'sticky': 'nswe',
-                     'children': [('Treeitem.text', {'sticky': 'nswe'})]})])
-        style.configure('Words.Treeview.Item', padding=(12, 5))
-        outer = ttk.Frame(root, padding=24)
-        outer.pack(fill='both', expand=True)
-        ttk.Label(outer, text='Language, counted.', style='Title.TLabel').pack(anchor='w')
-        ttk.Label(outer, text='NLP / SESSION 01  ·  Sentence, word and frequency analysis').pack(anchor='w', pady=(4, 16))
-        toolbar = ttk.Frame(outer)
-        toolbar.pack(fill='x')
-        for label, command in [('Open text', self.open_file), ('Load sample', self.load_sample),
+        self.result = None
+        self.font_size = 15
+        self.setWindowTitle('NLP Text Analyzer v1.3.0 | ARRahimipour')
+        self.resize(1180, 880)
+        self.setMinimumSize(850, 720)
+        families = {f.casefold(): f for f in QFontDatabase.families()}
+        self.family = next((families[f.casefold()] for f in ('Tahoma', 'Segoe UI', 'Arial')
+                            if f.casefold() in families), QApplication.font().family())
+        self.setStyleSheet('''
+            QWidget { background:#f2f5f9; color:#192637; }
+            QLabel#title { font-size:32px; font-weight:bold; }
+            QLabel#metric { font-size:30px; font-weight:bold; color:#176b61; }
+            QPushButton { padding:8px 12px; border:1px solid #ccd6e0; border-radius:5px; }
+            QPushButton:hover { background:#e1eaeF; }
+            QTextEdit, QTableWidget { background:white; border:1px solid #d7e0e8; }
+            QTableWidget { alternate-background-color:#f2f6fa; }
+            QHeaderView::section { padding:9px; background:#e6edf2; border:0; font-weight:bold; }
+        ''')
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(12)
+        title = QLabel('Language, counted.'); title.setObjectName('title'); layout.addWidget(title)
+        layout.addWidget(QLabel('NLP / SESSION 01 · Sentence, word and frequency analysis'))
+        toolbar = QHBoxLayout(); layout.addLayout(toolbar)
+        for name, callback in [('Open text', self.open_file), ('Load sample', self.load_sample),
                                ('Export report', self.export), ('Clear', self.clear)]:
-            ttk.Button(toolbar, text=label, command=command).pack(side='left', padx=(0, 8))
-        ttk.Button(toolbar, text='A−', width=4, command=lambda: self.resize_text(-1)).pack(side='right')
-        ttk.Button(toolbar, text='A+', width=4, command=lambda: self.resize_text(1)).pack(side='right', padx=6)
-        ttk.Label(toolbar, text='Text size').pack(side='right', padx=6)
-        self.case = tk.BooleanVar(value=False)
-        self.persian = tk.BooleanVar(value=False)
-        self.numbers = tk.BooleanVar(value=False)
-        options = ttk.Frame(outer)
-        options.pack(fill='x', pady=12)
-        for label, variable in [('Case sensitive', self.case), ('Persian letter normalization', self.persian),
-                                ('Include numbers', self.numbers)]:
-            ttk.Checkbutton(options, text=label, variable=variable, command=self.refresh).pack(side='left', padx=(0, 20))
-        metrics = ttk.Frame(outer)
-        metrics.pack(fill='x', pady=(0, 14))
-        self.metric_labels = {}
-        for index, name in enumerate(('Sentences', 'Words', 'Unique words', 'Appear once')):
-            box = ttk.Frame(metrics, padding=(0, 8))
-            box.grid(row=0, column=index, sticky='ew')
-            metrics.columnconfigure(index, weight=1)
-            value = ttk.Label(box, text='0', style='Metric.TLabel')
-            value.pack(anchor='w')
-            ttk.Label(box, text=name).pack(anchor='w')
-            self.metric_labels[name] = value
-        panels = ttk.Panedwindow(outer, orient='horizontal')
-        panels.pack(fill='both', expand=True)
-        left = ttk.Frame(panels)
-        right = ttk.Frame(panels)
-        panels.add(left, weight=3)
-        panels.add(right, weight=2)
-        ttk.Label(left, text='INPUT TEXT · UTF-8').pack(anchor='w', pady=(0, 8))
-        self.editor = ScrolledText(left, wrap='word', undo=True, font=self.content_font,
-                                   relief='flat', padx=14, pady=14, width=44, height=12,
-                                   background='white', foreground='#192637', insertbackground='#176b61')
-        self.editor.pack(fill='both', expand=True, padx=(0, 14))
-        self.editor.tag_configure('rtl', justify='right')
-        self.editor.tag_configure('ltr', justify='left')
-        self.editor.bind('<<Modified>>', self.on_modified)
-        ttk.Label(right, text='TOP 10 WORDS').pack(anchor='w', pady=(0, 8))
-        self.table = ttk.Treeview(right, columns=('rank', 'word', 'count'), show='headings', height=10, style='Words.Treeview')
-        for column, width in [('rank', 65), ('word', 200), ('count', 85)]:
-            self.table.heading(column, text=column.title())
-            self.table.column(column, width=width, minwidth=width, stretch=(column == 'word'), anchor='center' if column != 'word' else 'w')
-        self.table.tag_configure('alternate', background='#f2f6fa')
-        scrollbar = ttk.Scrollbar(right, orient='vertical', command=self.table.yview)
-        self.table.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side='right', fill='y')
-        self.table.pack(fill='both', expand=True)
-        self.status = ttk.Label(outer, text='', wraplength=1000)
-        self.status.pack(fill='x', pady=(14, 4))
-        ttk.Label(outer, text='Offline analysis · Numbers are excluded unless Include numbers is selected.',
-                  font=('Arial', 9)).pack(anchor='w')
-        ttk.Separator(outer, orient='horizontal').pack(fill='x', pady=(12, 8))
-        author = ttk.Frame(outer)
-        author.pack(fill='x')
-        for index, line in enumerate(AUTHOR_LINES[:3]):
-            label = ttk.Label(author, text=line, wraplength=780,
-                              font=('Arial', 10, 'bold') if index == 0 else ('Arial', 9))
-            label.pack(anchor='w')
-        for text, url in [(AUTHOR_EMAIL, 'mailto:' + AUTHOR_EMAIL),
-                          (AUTHOR_WEBSITE, 'https://' + AUTHOR_WEBSITE)]:
-            link = ttk.Label(author, text=text, foreground='#176b61', cursor='hand2',
-                             font=('Arial', 9, 'underline'), takefocus=True)
-            link.pack(anchor='w')
-            link.bind('<Button-1>', lambda event, address=url: webbrowser.open(address))
-            link.bind('<Return>', lambda event, address=url: webbrowser.open(address))
-        root.bind('<Control-o>', lambda event: self.open_file())
-        root.bind('<Control-s>', lambda event: self.export())
-        self.refresh()
+            button = QPushButton(name); button.clicked.connect(callback); toolbar.addWidget(button)
+        toolbar.addStretch(); toolbar.addWidget(QLabel('Text size'))
+        for name, delta in [('A+', 1), ('A−', -1)]:
+            button = QPushButton(name); button.clicked.connect(lambda checked=False, d=delta: self.resize_text(d))
+            toolbar.addWidget(button)
+        options = QHBoxLayout(); layout.addLayout(options)
+        self.case = QCheckBox('Case sensitive')
+        self.persian = QCheckBox('Persian letter normalization')
+        self.numbers = QCheckBox('Include numbers')
+        for option in (self.case, self.persian, self.numbers):
+            options.addWidget(option); option.toggled.connect(self.refresh)
+        options.addStretch()
+        metrics = QHBoxLayout(); layout.addLayout(metrics); self.metric_labels = []
+        for name in ('Sentences', 'Words', 'Unique words', 'Appear once'):
+            box = QVBoxLayout(); value = QLabel('0'); value.setObjectName('metric')
+            box.addWidget(value); box.addWidget(QLabel(name)); metrics.addLayout(box, 1)
+            self.metric_labels.append(value)
+        panels = QSplitter(Qt.Orientation.Horizontal); layout.addWidget(panels, 1)
+        left = QWidget(); left_layout = QVBoxLayout(left); left_layout.setContentsMargins(0, 0, 8, 0)
+        left_layout.addWidget(QLabel('INPUT TEXT · UTF-8'))
+        self.editor = QTextEdit()
+        self.editor.setAcceptRichText(False)
+        self.editor.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        self.editor.document().setDocumentMargin(20)
+        self.editor.setPlaceholderText('Paste or type text in any language…')
+        left_layout.addWidget(self.editor); panels.addWidget(left)
+        right = QWidget(); right_layout = QVBoxLayout(right); right_layout.setContentsMargins(8, 0, 0, 0)
+        right_layout.addWidget(QLabel('TOP 10 WORDS'))
+        self.table = QTableWidget(0, 3)
+        self.table.setHorizontalHeaderLabels(['Rank', 'Word', 'Count'])
+        self.table.verticalHeader().hide(); self.table.setAlternatingRowColors(True)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setShowGrid(False)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(0, 65); self.table.setColumnWidth(2, 85)
+        right_layout.addWidget(self.table); panels.addWidget(right); panels.setSizes([660, 420])
+        self.status = QLabel(); self.status.setWordWrap(True); layout.addWidget(self.status)
+        layout.addWidget(QLabel('Offline analysis · Numbers are excluded unless Include numbers is selected.'))
+        author = QLabel('<b>' + AUTHOR_LINES[0] + '</b><br>' + '<br>'.join(AUTHOR_LINES[1:3]) +
+                        f'<br><a href="mailto:{AUTHOR_EMAIL}">{AUTHOR_EMAIL}</a>' +
+                        f'<br><a href="https://{AUTHOR_WEBSITE}">{AUTHOR_WEBSITE}</a>')
+        author.setOpenExternalLinks(True); author.setWordWrap(True); layout.addWidget(author)
+        self.timer = QTimer(self); self.timer.setSingleShot(True); self.timer.setInterval(180)
+        self.timer.timeout.connect(self.refresh)
+        self.editor.textChanged.connect(lambda: self.timer.start())
+        QShortcut(QKeySequence('Ctrl+O'), self, activated=self.open_file)
+        QShortcut(QKeySequence('Ctrl+S'), self, activated=self.export)
+        self.resize_text(0); self.refresh()
 
     def resize_text(self, delta):
-        size = max(11, min(24, int(self.table_font.cget('size')) + delta))
-        self.content_font.configure(size=size)
-        self.table_font.configure(size=size)
-        self.style.configure('Words.Treeview', rowheight=max(42, self.table_font.metrics('linespace') + 18))
+        self.font_size = max(11, min(24, self.font_size + delta))
+        font = QFont(self.family, self.font_size)
+        self.editor.setFont(font); self.table.setFont(font)
+        self.table.verticalHeader().setDefaultSectionSize(max(42, self.table.fontMetrics().height() + 18))
 
-    def on_modified(self, event=None):
-        if self.editor.edit_modified():
-            self.editor.edit_modified(False)
-            if self.pending is not None:
-                self.root.after_cancel(self.pending)
-            self.pending = self.root.after(250, self.refresh)
+    def apply_direction(self):
+        """Set actual paragraph direction, preserving logical source and selection."""
+        document = self.editor.document()
+        dominant = text_direction(self.editor.toPlainText())
+        changes = []
+        block = document.begin()
+        while block.isValid():
+            text = block.text()
+            rtl = (text_direction(text) if any(c.isalpha() for c in text) else dominant) == 'rtl'
+            direction = Qt.LayoutDirection.RightToLeft if rtl else Qt.LayoutDirection.LeftToRight
+            alignment = Qt.AlignmentFlag.AlignRight if rtl else Qt.AlignmentFlag.AlignLeft
+            fmt = block.blockFormat()
+            if fmt.layoutDirection() != direction or fmt.alignment() != alignment:
+                fmt.setLayoutDirection(direction); fmt.setAlignment(alignment)
+                fmt.setLeftMargin(6); fmt.setRightMargin(6)
+                changes.append((block, fmt))
+            block = block.next()
+        if changes:
+            # Formatting accompanies the preceding edit instead of adding an undo step.
+            blocker = QSignalBlocker(self.editor)
+            cursor = QTextCursor(document)
+            cursor.joinPreviousEditBlock()
+            for block, fmt in changes:
+                cursor.setPosition(block.position()); cursor.setBlockFormat(fmt)
+            cursor.endEditBlock()
+            del blocker
 
     def refresh(self):
-        if self.pending is not None:
-            self.root.after_cancel(self.pending)
-            self.pending = None
-        text = self.editor.get('1.0', 'end-1c')
-        direction = align_editor(self.editor, text)
-        self.table.column('word', anchor='e' if direction == 'rtl' else 'w')
-        self.table.heading('word', anchor='e' if direction == 'rtl' else 'w')
-        self.result = analyze(text, AnalysisOptions(
-            case_sensitive=self.case.get(), persian_normalization=self.persian.get(),
-            include_numbers=self.numbers.get()))
-        values = [self.result.sentence_count, self.result.word_count,
-                  self.result.unique_word_count, self.result.singleton_word_count]
-        for label, value in zip(self.metric_labels.values(), values):
-            label.configure(text=str(value))
-        for item in self.table.get_children():
-            self.table.delete(item)
-        for index, row in enumerate(self.result.top_words, 1):
-            self.table.insert('', 'end', values=(index, row['word'], row['count']),
-                              tags=('alternate',) if index % 2 == 0 else ())
-        status = 'Analysis complete · No word-count limit'
-        if self.result.warnings:
-            status += ' | ' + self.result.warnings[0]
-        self.status.configure(text=status)
+        self.timer.stop()
+        self.apply_direction()
+        self.result = analyze(self.editor.toPlainText(), AnalysisOptions(
+            case_sensitive=self.case.isChecked(), persian_normalization=self.persian.isChecked(),
+            include_numbers=self.numbers.isChecked()))
+        values = (self.result.sentence_count, self.result.word_count,
+                  self.result.unique_word_count, self.result.singleton_word_count)
+        for label, value in zip(self.metric_labels, values): label.setText(str(value))
+        self.table.setRowCount(len(self.result.top_words))
+        for index, row in enumerate(self.result.top_words):
+            for column, value in enumerate((index + 1, row['word'], row['count'])):
+                item = QTableWidgetItem(str(value))
+                alignment = Qt.AlignmentFlag.AlignCenter
+                if column == 1:
+                    alignment = Qt.AlignmentFlag.AlignRight if text_direction(str(value)) == 'rtl' else Qt.AlignmentFlag.AlignLeft
+                    alignment |= Qt.AlignmentFlag.AlignVCenter
+                item.setTextAlignment(alignment); self.table.setItem(index, column, item)
+        self.status.setText('Analysis complete · No word-count limit' +
+                            (' | ' + self.result.warnings[0] if self.result.warnings else ''))
 
     def set_text(self, text):
-        self.editor.delete('1.0', 'end')
-        self.editor.insert('1.0', text)
-        self.refresh()
+        self.editor.setPlainText(text); self.refresh()
 
     def open_file(self):
-        path = filedialog.askopenfilename(filetypes=[('Text files', '*.txt'), ('All files', '*')])
-        if path:
-            try:
-                text = Path(path).read_text(encoding='utf-8-sig')
-                self.input_path = Path(path).resolve()
-                self.set_text(text)
-            except (OSError, UnicodeError) as exc:
-                messagebox.showerror('Cannot open file', str(exc))
+        path, _ = QFileDialog.getOpenFileName(self, 'Open text', '', 'Text files (*.txt);;All files (*)')
+        if path: self.read_file(Path(path))
+
+    def read_file(self, path):
+        try:
+            text = path.read_text(encoding='utf-8-sig')
+            self.input_path = path.resolve(); self.set_text(text)
+        except (OSError, UnicodeError) as exc: QMessageBox.critical(self, 'Cannot open file', str(exc))
 
     def load_sample(self):
-        path = Path(__file__).resolve().parent.parent / 'examples' / 'english_300.txt'
-        try:
-            text = path.read_text(encoding='utf-8')
-            self.input_path = path.resolve()
-            self.set_text(text)
-        except OSError as exc:
-            messagebox.showerror('Cannot load sample', str(exc))
+        self.read_file(Path(__file__).resolve().parent.parent / 'examples' / 'english_300.txt')
 
     def clear(self):
-        self.input_path = None
-        self.set_text('')
+        self.input_path = None; self.set_text('')
 
     def export(self):
         self.refresh()
-        path = filedialog.asksaveasfilename(defaultextension='.html', initialfile='analysis.html',
-            filetypes=[('HTML report', '*.html'), ('JSON report', '*.json'),
-                       ('CSV vocabulary', '*.csv'), ('Text report', '*.txt')])
-        if path:
-            formats = {'.html': 'html', '.json': 'json', '.csv': 'csv', '.txt': 'text'}
-            format = formats.get(Path(path).suffix.lower())
-            if not format:
-                messagebox.showerror('Unsupported format', 'Choose .html, .json, .csv, or .txt.')
-                return
-            if self.input_path == Path(path).resolve():
-                messagebox.showerror('Cannot overwrite input', 'Choose a different output filename.')
-                return
-            try:
-                Path(path).write_text(render_report(self.result, format), encoding='utf-8')
-                messagebox.showinfo('Report saved', f'Report saved to:\n{path}')
-            except OSError as exc:
-                messagebox.showerror('Cannot save report', str(exc))
+        path, selected = QFileDialog.getSaveFileName(self, 'Save report', 'analysis.html',
+            'HTML report (*.html);;JSON report (*.json);;CSV vocabulary (*.csv);;Text report (*.txt)')
+        if not path: return
+        destination = Path(path)
+        if not destination.suffix:
+            extension = selected.split('*.')[-1].split(')')[0]
+            destination = destination.with_suffix('.' + extension)
+        formats = {'.html': 'html', '.json': 'json', '.csv': 'csv', '.txt': 'text'}
+        format = formats.get(destination.suffix.lower())
+        if not format:
+            QMessageBox.warning(self, 'Unsupported format', 'Choose .html, .json, .csv, or .txt.'); return
+        if self.input_path == destination.resolve():
+            QMessageBox.warning(self, 'Cannot overwrite input', 'Choose a different output filename.'); return
+        try:
+            destination.write_text(render_report(self.result, format), encoding='utf-8')
+            QMessageBox.information(self, 'Report saved', str(destination))
+        except OSError as exc: QMessageBox.critical(self, 'Cannot save report', str(exc))
 
 
 def launch():
-    try:
-        root = tk.Tk()
-    except tk.TclError as exc:
-        raise RuntimeError('Tk could not open a graphical display.') from exc
-    AnalyzerWindow(root)
-    root.mainloop()
+    app = QApplication.instance() or QApplication(sys.argv[:1])
+    window = AnalyzerWindow(); window.show()
+    app.exec()

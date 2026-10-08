@@ -52,8 +52,14 @@ test_editor_switches_alignment_without_editing_content (test_direction.Direction
 test_html_direction (test_direction.DirectionTests.test_html_direction) ... ok
 test_mixed_text_uses_dominant_direction (test_direction.DirectionTests.test_mixed_text_uses_dominant_direction) ... ok
 test_persian_arabic_and_english (test_direction.DirectionTests.test_persian_arabic_and_english) ... ok
+test_clear_and_sample (test_gui.DesktopTests.test_clear_and_sample) ... ok
+test_persian_and_english_paragraph_directions (test_gui.DesktopTests.test_persian_and_english_paragraph_directions) ... ok
+test_refresh_preserves_selection_and_source (test_gui.DesktopTests.test_refresh_preserves_selection_and_source) ... ok
+test_uploaded_text_counts_in_actual_gui (test_gui.DesktopTests.test_uploaded_text_counts_in_actual_gui) ... ok
+test_wrapped_rtl_lines_stay_inside_editor (test_gui.DesktopTests.test_wrapped_rtl_lines_stay_inside_editor) ... ok
+test_zoom_bounds (test_gui.DesktopTests.test_zoom_bounds) ... ok
 
 ----------------------------------------------------------------------
-Ran 54 tests in 0.677s
+Ran 60 tests in 0.998s
 
 OK

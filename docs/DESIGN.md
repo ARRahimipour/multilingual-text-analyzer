@@ -36,7 +36,7 @@ This is an introductory rule-based NLP pipeline. It counts observable textual pa
 ## Engineering choices
 
 - Core logic is independent of input/output and GUI code.
-- No network calls, telemetry, credentials, or external dependencies are used.
+- No network calls, telemetry, or credentials are used during analysis. The CLI is standard-library-only; the optional desktop uses PySide6 Essentials.
 - Reports expose options and tokens for reproducibility.
 - Input files cannot be overwritten through the same-path export commands.
 - HTML escapes user text before inserting it into markup.
