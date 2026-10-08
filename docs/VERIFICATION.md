@@ -1,4 +1,4 @@
-# Verification record — v1.3.0
+# Verification record — v1.3.1
 
 Date: 2026-10-08. Python 3.12.14, Linux, PySide6 Essentials 6.8.3.
 
@@ -33,3 +33,18 @@ The actual Windows/macOS desktop has not been run here. Font availability, nativ
 https://doc.qt.io/qtforpython-6.8/PySide6/QtGui/QTextBlockFormat.html
 
 The editor uses block layout direction and alignment plus document and block margins. Formatting accompanies the preceding edit in undo history.
+
+## Isolated-environment verification
+
+For v1.3.1, a fresh `.venv` was created with `setup_env.py` and the pinned requirements were installed there. No system-site-packages option was used.
+
+- `.venv/bin/python` reported `sys.prefix != sys.base_prefix` as `True`.
+- PySide6 Essentials and shiboken6 both installed at 6.8.3.
+- `python -m pip check` reported no broken requirements.
+- All 60 tests passed using the environment's interpreter.
+- Both setup and launcher files compiled successfully.
+- Re-running setup with `--cli-only` reused the existing environment.
+- `run_gui.py` launched the real Qt event loop from a different working directory in offscreen mode.
+- `.venv` is ignored by Git and excluded from the archive.
+
+Windows PowerShell/CMD commands have been reviewed but not executed on Windows. Existing commit timestamps are retained. New commits use the actual commit time and the requested author/committer identity.

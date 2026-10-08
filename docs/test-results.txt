@@ -60,6 +60,6 @@ test_wrapped_rtl_lines_stay_inside_editor (test_gui.DesktopTests.test_wrapped_rt
 test_zoom_bounds (test_gui.DesktopTests.test_zoom_bounds) ... ok
 
 ----------------------------------------------------------------------
-Ran 60 tests in 0.998s
+Ran 60 tests in 0.952s
 
 OK

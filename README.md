@@ -1,195 +1,256 @@
 # NLP Text Analyzer
 
-**NLP text analysis · Python · Offline · Unicode-aware · No word-count limit**
+A small Python desktop app for exploring a text: how many sentences it contains, how many words it uses, and which words appear most often. There is also a command-line interface for saving reports or checking several inputs from a terminal.
 
-Maintainer: **ARRahimipour** · **arrahimipourdev@gmail.com**
+The project started with the first-session NLP assignment: choose a 300-word text and extract sentence counts, vocabulary size, and the ten most frequent words. The application now accepts texts of any length. The original 300-word example is still included so there is an easy result to check against.
 
-Analyze text of any length and report its sentence count, word count, unique vocabulary, and ten most frequent words. The project follows the first NLP pipeline in the provided `NLP_Session1_White.pdf`: raw text → sentence tokenization → word tokenization → frequency analysis.
+**Author:** Alireza Rahimipour Anaraki
 
-## Quick start
+**Git identity:** `ARRahimipour <arrahimipourdev@gmail.com>`
 
-Requires Python **3.10 or newer**. The CLI requires no pip packages, models, account, API key, or internet. The desktop interface requires the optional Qt package below; after installation it also works offline.
+## What the app does
 
-Extract the ZIP and open a terminal inside `nlp-text-analyzer`.
+- Counts sentences, word tokens, distinct words, and words that occur only once.
+- Lists the ten most frequent words; tied counts follow their first appearance in the text.
+- Handles UTF-8 files and pasted text, including Persian and Arabic.
+- Uses a Qt editor for right-to-left text, mixed scripts, and automatic line wrapping.
+- Offers optional Persian letter normalization and numeric-token counting.
+- Exports HTML, JSON, CSV, or a plain-text report.
 
-```bash
-python main.py examples/english_300.txt
+Text analysis runs locally. No text is sent to a service, and no language model or API key is needed.
+
+## Setup
+
+Use **Python 3.12** if possible; that is the version used for verification. The code requires Python 3.10 or newer, but the pinned Qt release also needs a compatible wheel for your Python version and operating system. Very new Python releases may need a different Qt version. Start with Python 3.12 if installation fails.
+
+Extract the ZIP and open a terminal in the directory containing `main.py`. If you want the Git history as well, first follow [Restoring the repository](#restoring-the-repository) below and work in the cloned directory.
+
+### Recommended: create the environment with the helper
+
+On Windows:
+
+```powershell
+py -3.12 setup_env.py
+py -3.12 run_gui.py
 ```
 
-On systems where Python is named `python3`, use `python3` instead. On Windows, `py` may also be used.
-
-### Desktop interface (v1.3.0)
-
-Install the Qt desktop dependency once, then launch:
+If `python` already points to Python 3.12, these commands work too:
 
 ```bash
-python -m pip install -r requirements-gui.txt
+python setup_env.py
+python run_gui.py
+```
+
+On macOS or Linux:
+
+```bash
+python3 setup_env.py
+python3 run_gui.py
+```
+
+`setup_env.py` creates `.venv` next to `main.py` and installs the pinned requirements there. Running it again reuses that environment. `run_gui.py` always launches the Python executable inside this project's `.venv`, even when the shell has not activated it. Both helpers resolve paths relative to their own files.
+
+The initial installation needs internet access. After that, the application works offline. `.venv` is intentionally excluded from Git and the release ZIP: virtual environments contain platform-specific executables and should be created on the machine that will use them.
+
+### Manual setup on Windows
+
+PowerShell:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 python main.py --gui
 ```
 
-The requirement installs PySide6 Essentials, the Qt modules used by this application. Internet is needed for installation, not for text analysis. Qt replaces the previous Tk interface to provide native bidirectional layout and word wrapping. Do not run the old Tk release expecting the new behavior; the title must show **v1.3.0**.
+Command Prompt uses a different activation command:
 
-Click **Load sample**, paste your own text, or use **Open text**. Metrics update automatically. **Export report** saves HTML, JSON, CSV, or plain text. Ctrl+O opens a file; Ctrl+S exports. Use **A+** and **A−** to adjust text size between 11 and 24 points.
+```bat
+.venv\Scripts\activate.bat
+```
 
-### Persian and Arabic display
+If PowerShell blocks activation, there is no need to change its execution policy. Call the environment's interpreter directly:
 
-The editor now sets real paragraph layout direction in Qt, not just right justification. Persian and Arabic paragraphs use right-to-left direction; English paragraphs use left-to-right direction. Mixed paragraphs use the dominant strong-character direction, with the first strong character breaking ties. Qt handles bidirectional runs and line wrapping; document margins keep glyphs away from the frame. This does not reverse the stored text, insert directional control characters, or alter word counts. Normal selection, copy, paste, and editing use the original logical text.
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe main.py --gui
+```
 
-Qt font selection prefers installed Tahoma, Segoe UI, Arial, then the system default. Word-table cells follow each word's direction, while the interface labels remain English.
-
-### Submit-ready sample
-
-`examples/english_300.txt` is original text about the NLP pipeline. Its expected default result is:
-
-| Metric | Result |
-| --- | ---: |
-| Sentences | 26 |
-| Words | 300 |
-| Unique vocabulary items | 207 |
-| Words appearing exactly once | 166 |
-
-| Rank | Word | Count |
-| --- | --- | ---: |
-| 1 | the | 19 |
-| 2 | and | 9 |
-| 3 | a | 7 |
-| 4 | language | 6 |
-| 5 | text | 6 |
-| 6 | word | 6 |
-| 7 | words | 5 |
-| 8 | with | 3 |
-| 9 | to | 3 |
-| 10 | this | 3 |
-
-Open `examples/english_300_report.html` in a browser for a formatted report with the full sentence audit and vocabulary. The matching JSON report contains every token, sentence, frequency, and counting option.
-
-**There is no 300-word restriction, target, or PASS/CHECK status. The included 300-word text is only a reproducible example.**
-
-## Command-line examples
+### Manual setup on macOS or Linux
 
 ```bash
-# Analyze any UTF-8 text file.
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python main.py --gui
+```
+
+Run `deactivate` when you want to leave an activated environment. Some Linux distributions package venv support separately; if creation fails because `ensurepip` is missing, install the venv package for your Python version.
+
+### Check which Python you are using
+
+After activation:
+
+```bash
+python -c "import sys; print(sys.executable); print(sys.prefix != sys.base_prefix)"
+```
+
+The path should point inside this project's `.venv`, and the second line should be `True`.
+
+For command-line-only use, `python setup_env.py --cli-only` creates the environment without downloading Qt. The analysis engine and report exporters use only Python's standard library.
+
+## Using the desktop
+
+Open the application with `python run_gui.py`. The window title should show **v1.3.1**.
+
+1. Choose **Open text**, paste a passage, or select **Load sample**.
+2. Read the four totals above the editor and the frequency table on the right.
+3. Enable **Persian letter normalization** when Arabic and Persian letter variants should count together.
+4. Enable **Include numbers** if standalone numbers should contribute to the word total.
+5. Select **Export report** and choose a filename and format.
+
+Counts update after a short typing pause. **A+** and **A−** change the editor and table font sizes. Ctrl+O opens a file; Ctrl+S exports a report. The interface labels remain English while the editor sets direction separately for each paragraph. The text is stored in its original logical order, so display formatting does not reverse it or insert hidden directional characters.
+
+![Desktop with the Persian regression example](docs/qt-preview.png)
+
+The preview was rendered using Qt on Linux. Fonts and native dialogs can look different on Windows or macOS.
+
+## Examples and expected counts
+
+These commands assume `.venv` is activated. You can also replace `python` with the full path to its interpreter.
+
+```bash
+python main.py examples/english_300.txt
+python main.py examples/persian_regression.txt --persian --include-numbers
+```
+
+| Input and options | Sentences | Words | Unique words | Occur once |
+| --- | ---: | ---: | ---: | ---: |
+| English sample, defaults | 26 | 300 | 207 | 166 |
+| Persian regression, `--persian` | 19 | 298 | 181 | 130 |
+| Persian regression, `--persian --include-numbers` | 19 | 300 | 183 | 132 |
+
+The two extra Persian-example tokens are `۱۴۰۵` and `2026`. This explains why a count can change from 298 to 300 without any text being added. Persian normalization also changes vocabulary counts when different spellings of the same letter are merged.
+
+The Persian example includes quoted punctuation such as `«؟»` and `«!»`. Those are examples of symbols inside a sentence, so they do not create additional sentence boundaries.
+
+## Command-line use
+
+```bash
 python main.py my_text.txt
-
-# Normalize Arabic letter variants in Persian input.
-python main.py examples/persian.txt --persian
-
-# Analyze a literal string.
 python main.py --text "Hello world! Hello NLP."
-
-# Save an offline report; output directories are created automatically.
-python main.py examples/english_300.txt --format html --output outputs/report.html
+python -m nlp_analyzer examples/english_300.txt
+python main.py examples/persian_regression.txt --persian --include-numbers --format html --output outputs/report.html
 python main.py examples/english_300.txt --format json --output outputs/report.json
 python main.py examples/english_300.txt --format csv --output outputs/vocabulary.csv
-
-# Equivalent module entry point.
-python -m nlp_analyzer examples/english_300.txt
 ```
 
-Omit both the filename and `--text` to read piped standard input. Use UTF-8 for files and terminal streams. Warnings are sent to stderr so JSON stdout remains parseable.
+When no file or `--text` argument is supplied, the CLI reads standard input. Files must be UTF-8. Warnings go to stderr so JSON on stdout stays usable by another program.
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `--top N` | 10 | Maximum number of frequent words |
-| `--case-sensitive` | Off | Keep uppercase and lowercase variants separate |
-| `--persian` | Off | Convert Arabic yeh/alef maksura/kaf to Persian forms and remove tatweel |
-| `--include-numbers` | Off | Include purely numeric tokens |
-| `--format` | text | Select text, json, csv, or html |
-| `--output PATH` | stdout | Write a UTF-8 report |
-| `--gui` | Off | Launch the desktop interface |
+| Option | Purpose |
+| --- | --- |
+| `--top N` | Show up to N frequent words; default 10 |
+| `--case-sensitive` | Keep uppercase and lowercase variants separate |
+| `--persian` | Normalize Arabic yeh, alef maksura, and kaf to Persian forms; remove tatweel |
+| `--include-numbers` | Count tokens containing only numbers |
+| `--format text/json/csv/html` | Choose the report format; default text |
+| `--output PATH` | Save the report instead of printing it |
+| `--gui` | Open the desktop; requires the Qt dependency |
 
-Exit codes: **0** for successful analysis at any word count, **2** for invalid arguments, unreadable files, invalid UTF-8, or unavailable GUI. CLI options apply to CLI analysis; the GUI uses its own controls and shows the top ten words. The old `--strict` and `--target` options have been removed.
+A successful CLI analysis returns exit code 0. Invalid arguments or file errors return 2. There is no target word count and no PASS/CHECK grading status. The desktop has its own controls; CLI analysis flags are not used to initialize those controls.
 
-## Counting policy
+### What each export contains
 
-The instructor does not specify every tokenization convention. This implementation makes its choices explicit and reproducible:
+| Format | Contents |
+| --- | --- |
+| HTML | Totals, frequency bars, sentence audit, vocabulary, options, and author details |
+| JSON | All metrics, tokens, sentences, frequencies, warnings, and options |
+| CSV | The full vocabulary frequency table, with `word` and `count` columns |
+| Text | Totals, most frequent words, selected options, and author details |
 
-- Unicode NFC normalization merges canonically equivalent character sequences. Curly apostrophes become straight apostrophes. A leading BOM is ignored.
-- A token consists of Unicode letters/numbers and attached combining marks. It must contain a letter unless `--include-numbers` is enabled. Internal apostrophes, ZWNJ, and ZWJ remain inside tokens. Punctuation, symbols, emoji, underscores, and hyphens separate tokens. Thus `don't` and `می‌روم` are each one token, while `well-known` is two. Decimal punctuation separates numeric tokens when numbers are included.
-- Case folding is applied to tokens by default: `Hello` and `HELLO` share one entry. Unicode case folding is language-independent, not a locale-specific rule for Turkish or other languages.
-- Unique words means **distinct normalized vocabulary items**, not words occurring once. The report includes both measurements separately.
-- No stopword removal, stemming, or lemmatization is performed. These operations would change the homework's raw frequency counts.
-- Frequency ties follow first appearance in the source text. If fewer than ten distinct tokens exist, every available item is returned.
-- Quoted punctuation-only examples such as `«؟»` and `"!"` do not end sentences. Actual quoted sentences still use the normal boundary rules.
-- Sentences end at common Western, Persian/Arabic, CJK, Indic, Armenian, and Ethiopic terminal punctuation. Repeated endings and trailing closing quotes remain together. Decimal points, common English titles, and single-letter initials receive basic protection. Blank lines also separate sentences; single line wraps do not. A final unpunctuated fragment counts as a sentence. Punctuation-only fragments do not count.
-- Optional Persian normalization does not delete Arabic vowel marks or infer missing word spaces. It does not merge `می روم`, `میروم`, and `می‌روم` into one spelling.
+HTML bars are scaled against the most frequent word, not against the total word count. Existing output files may be replaced after you choose them; the app prevents exporting over the source text file itself.
 
-### Language coverage and limitations
+## How counting works
 
-The analyzer accepts Unicode text in any language. Tests include Persian, Arabic, English, French, German, Spanish, Russian, Greek, Hindi, Bengali, Turkish, Hebrew, and Korean. These examples verify deterministic token handling, not full linguistic accuracy in each language.
+The pipeline is deliberately simple: normalize the text, find sentence boundaries, extract tokens, and build a frequency table with `collections.Counter`. It does not remove stopwords, stem words, or try to infer meaning.
 
-**Unicode support is not universal word segmentation.** Chinese, Japanese, Thai, Lao, Khmer, and Myanmar text can contain lexical words without spaces. This implementation preserves uninterrupted character runs and emits a warning for the detected script ranges. It does not pretend those runs are dictionary words. Accurate segmentation requires an appropriate language-specific tokenizer and a defined evaluation corpus. Mixed-script runs also remain single tokens. Sentence splitting is heuristic: uncommon abbreviations, initials at sentence ends, ellipses within a sentence, unpunctuated writing, and language-specific conventions can require manual review. There is no universal hidden-test or “all languages” PASS claim.
+A **word token** contains Unicode letters or numbers and their attached marks. Unless numbers are enabled, a token must contain at least one letter. Internal apostrophes and Persian joining characters are retained: `don't` and `می‌روم` each count as one token. Hyphens separate tokens, so `well-known` counts as two. With numeric counting enabled, `3.14` is two numeric tokens because the decimal point separates them; the sentence splitter still protects that decimal point.
 
-The lecture mentions Python + NLTK as the initial pipeline. This project implements the same beginner pipeline directly using Python's standard library so it runs offline without NLTK/Punkt downloads. If the instructor explicitly requires NLTK rather than Python, that is an additional requirement and would need an adapter and its resources.
+**Unique words** means the number of distinct normalized tokens. **Occur once** means tokens whose frequency is exactly one. These are different metrics. For `hello hello world`, the total is 3, the vocabulary size is 2, and only 1 word occurs once.
 
-## API
+By default, case folding merges `Hello` and `HELLO`. NFC normalization also merges equivalent Unicode character sequences. Persian normalization is optional; it does not infer missing spaces, remove Arabic vowel marks, or merge `می روم`, `میروم`, and `می‌روم` into one spelling.
 
-```python
-from nlp_analyzer import AnalysisOptions, analyze
+Sentence splitting recognizes common terminal punctuation, protects decimal points and some English abbreviations, and ignores punctuation-only examples inside balanced quotes. Blank lines separate fragments; single line wraps do not. A final fragment without terminal punctuation counts as a sentence.
 
-result = analyze("سلام دنیا! سلام NLP.", AnalysisOptions(persian_normalization=True))
-print(result.sentence_count)
-print(result.word_count)
-print(result.unique_word_count)
-print(result.top_words)
-```
+These are explicit rules, not a full linguistic parser. Uncommon abbreviations, quoted dialogue, ellipses, and missing punctuation can still require review. Chinese, Japanese, Thai, and similar scripts need language-specific lexical segmentation; this program accepts their Unicode text but treats uninterrupted runs as tokens and warns for detected unspaced-script ranges. It does not promise exact word counts in every language.
 
-`result.to_dict()` returns a JSON-compatible result. JSON includes the entire analysis. CSV includes the full vocabulary frequency table, not sentence totals. HTML and text include the headline metrics; HTML also includes a sentence audit and vocabulary list.
+The supplied lecture mentions Python and NLTK. This implementation uses the standard library for the introductory pipeline so no tokenizer model downloads are needed. It is not an NLTK implementation.
 
-## Tests and verification
+## Tests
+
+From the activated environment:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-The automated suite contains **60 tests**, including multilingual subcases, a hand-counted example, the exact 300-word sample, invariants, CLI subprocess execution, arbitrary input lengths, author details, exports, UTF-8 failures, input-overwrite protection, and HTML escaping. See `docs/test-results.txt` for the captured run and `docs/VERIFICATION.md` for tested scope and limitations. No third-party test runner is required. Six GUI integration tests require the optional Qt dependency; they are skipped when it is absent. All 60 tests were run successfully with PySide6 Essentials 6.8.3 on Linux in offscreen mode.
+There are 60 tests covering token counts, normalization, quoted punctuation, exports, invalid input, arbitrary input lengths, and the Qt editor. Six tests exercise real Qt widgets in offscreen mode; without Qt, those six are skipped. The suite sets offscreen mode for GUI tests so a visible desktop is not required.
 
-## Project layout
+See [verification details](docs/VERIFICATION.md) and the captured [test output](docs/test-results.txt). The current release was checked in an isolated Python 3.12 environment on Linux. Windows installation commands are documented but have not been run here.
 
-```text
-nlp-text-analyzer/
-  main.py                     Convenience entry point
-  nlp_analyzer/
-    core.py                   Normalization, tokenization, counting
-    cli.py                    Argument parsing and file handling
-    gui.py                    Qt desktop interface
-    reports.py                Text, JSON, CSV, HTML rendering
-  examples/                   300-word English sample and Persian example
-  tests/                      Automated regression and integration tests
-  docs/                       Design explanation and verification record
-  history.bundle              Portable Git history, included in release ZIP
-```
+## Project structure
 
-## Author
+| Path | Responsibility |
+| --- | --- |
+| `main.py` | Main CLI and `--gui` entry point |
+| `setup_env.py` | Creates `.venv` and installs project requirements |
+| `run_gui.py` | Starts the desktop through the local environment |
+| `requirements.txt` | Complete desktop installation entry point |
+| `requirements-gui.txt` | Pinned Qt and binding dependencies |
+| `nlp_analyzer/core.py` | Normalization, tokenization, counts |
+| `nlp_analyzer/direction.py` | Unicode direction detection |
+| `nlp_analyzer/gui.py` | Qt desktop interface |
+| `nlp_analyzer/reports.py` | Export rendering |
+| `examples/` | Input texts and reproducible reports |
+| `tests/` | Unit and integration tests |
+| `docs/` | Design notes, verification, and development instructions |
 
-Alireza Rahimipour Anaraki
+## Troubleshooting
 
-Ph.D. Candidate in Computer Engineering – Artificial Intelligence
+**`No module named PySide6`:** install with `.venv`'s interpreter: `python -m pip install -r requirements.txt` after activation. Then use `python run_gui.py`. Installing globally does not install into the project's environment.
 
-Department of Computer Engineering, NT.B, Islamic Azad University, Tehran, Iran
+**The old interface still appears:** close all running copies and launch from the new project directory. Check the version in the window title.
 
-info@arrahimipour.com
+**The text has fewer words than expected:** check **Include numbers** first. Also check the documented handling of hyphens, punctuation, and Persian spaces versus half-spaces.
 
-arrahimipour.com
+**A UTF-8 error appears:** save the input file as UTF-8 in your editor. The application does not guess legacy encodings.
 
-The author block appears below the desktop workspace and in HTML and plain-text reports. Desktop and HTML email/website links are clickable.
+**A moved environment no longer works:** create a new `.venv` in the final project location. Do not copy one from a different machine or operating system.
 
-## Git history and identity
+**A test is skipped:** the Qt tests skip when the optional desktop dependency is unavailable. Check `python -m pip show PySide6-Essentials` in the same environment used to run tests.
 
-All included commits use this author and committer identity:
+## Restoring the repository
 
-```text
-ARRahimipour <arrahimipourdev@gmail.com>
-```
-
-The release includes `history.bundle`, a portable Git repository containing the actual development commits. Restore the history from the extracted directory:
+The release ZIP includes `history.bundle`, which contains the repository's real commit history. To get a working repository with that history, run from the extracted project directory:
 
 ```bash
 git clone history.bundle ../nlp-text-analyzer-repo
 cd ../nlp-text-analyzer-repo
 git config user.name "ARRahimipour"
 git config user.email "arrahimipourdev@gmail.com"
-git log --format="%h %an <%ae> | %s"
+python setup_env.py
 ```
 
-Git's local identity configuration is not transferred by cloning, so the two `git config` commands set it for your future commits as well. No remote repository was created or pushed. If you later push to your GitHub account, contribution attribution also depends on that email being associated with your account. The included commits are not cryptographically signed.
+Git identity is local configuration and does not travel with a clone. The two `git config` commands set it for future commits. Existing commits already carry the requested author and committer identity. Their recorded timestamps are preserved; no artificial dates or simulated work sessions are added. No remote repository has been created or pushed.
+
+For change and dependency workflows, see [development notes](docs/DEVELOPMENT.md).
+
+## Author
+
+**Alireza Rahimipour Anaraki**
+
+Ph.D. Candidate in Computer Engineering – Artificial Intelligence
+
+Department of Computer Engineering, NT.B, Islamic Azad University, Tehran, Iran
+
+[info@arrahimipour.com](mailto:info@arrahimipour.com) · [arrahimipour.com](https://arrahimipour.com)
