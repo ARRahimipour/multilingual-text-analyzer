@@ -4,7 +4,7 @@ Validation date: 2026-10-08.
 
 ## Executed
 
-- Python 3.12.14 on Linux: `python -m unittest discover -s tests -v` — 44 tests passed.
+- Python 3.12.14 on Linux: `python -m unittest discover -s tests -v` — 49 tests passed.
 - `python main.py examples/english_300.txt` — exit code 0, 300 words, 26 sentences, 207 unique vocabulary items.
 - The sample also contains exactly 300 whitespace-separated items.
 - CLI subprocess tests cover literal strings, stdin, input files, output files, JSON parsing, arbitrary text lengths, missing files, invalid UTF-8, and overwrite protection.
@@ -36,3 +36,16 @@ The Tk desktop interface could not be launched because the execution environment
 6. Resize the window and confirm the editor and frequency table remain usable.
 
 A passing test suite validates these explicit rules and cases, not every language or an unknown grading system.
+
+## Version 1.1.1 sentence-boundary fix
+
+The uploaded Persian report exposed two false boundaries inside quoted punctuation examples. Balanced quotations containing only symbols now protect those symbols from sentence splitting. Real quoted sentences keep their normal boundaries. The source text reconstructed from the uploaded report is included as `examples/persian_regression.txt`.
+
+Verified against this full text:
+
+| Numbers | Sentences | Words | Unique | Singletons |
+| --- | ---: | ---: | ---: | ---: |
+| Excluded | 19 | 298 | 181 | 130 |
+| Included | 19 | 300 | 183 | 132 |
+
+Additional regression tests cover several quote styles, actual quoted speech, and unmatched quotes. The desktop title displays v1.1.1 so users can identify the corrected release.

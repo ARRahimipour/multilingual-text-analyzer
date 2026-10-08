@@ -99,6 +99,7 @@ The instructor does not specify every tokenization convention. This implementati
 - Unique words means **distinct normalized vocabulary items**, not words occurring once. The report includes both measurements separately.
 - No stopword removal, stemming, or lemmatization is performed. These operations would change the homework's raw frequency counts.
 - Frequency ties follow first appearance in the source text. If fewer than ten distinct tokens exist, every available item is returned.
+- Quoted punctuation-only examples such as `«؟»` and `"!"` do not end sentences. Actual quoted sentences still use the normal boundary rules.
 - Sentences end at common Western, Persian/Arabic, CJK, Indic, Armenian, and Ethiopic terminal punctuation. Repeated endings and trailing closing quotes remain together. Decimal points, common English titles, and single-letter initials receive basic protection. Blank lines also separate sentences; single line wraps do not. A final unpunctuated fragment counts as a sentence. Punctuation-only fragments do not count.
 - Optional Persian normalization does not delete Arabic vowel marks or infer missing word spaces. It does not merge `می روم`, `میروم`, and `می‌روم` into one spelling.
 
@@ -130,7 +131,7 @@ print(result.top_words)
 python -m unittest discover -s tests -v
 ```
 
-The automated suite contains **44 tests**, including multilingual subcases, a hand-counted example, the exact 300-word sample, invariants, CLI subprocess execution, arbitrary input lengths, author details, exports, UTF-8 failures, input-overwrite protection, and HTML escaping. See `docs/test-results.txt` for the captured run and `docs/VERIFICATION.md` for tested scope and limitations. No third-party test runner is required.
+The automated suite contains **49 tests**, including multilingual subcases, a hand-counted example, the exact 300-word sample, invariants, CLI subprocess execution, arbitrary input lengths, author details, exports, UTF-8 failures, input-overwrite protection, and HTML escaping. See `docs/test-results.txt` for the captured run and `docs/VERIFICATION.md` for tested scope and limitations. No third-party test runner is required.
 
 ## Project layout
 

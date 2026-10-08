@@ -36,14 +36,19 @@ test_paragraphs_and_wrapping (test_core.AnalysisTests.test_paragraphs_and_wrappi
 test_persian_joiner_and_question (test_core.AnalysisTests.test_persian_joiner_and_question) ... ok
 test_persian_normalization_is_opt_in (test_core.AnalysisTests.test_persian_normalization_is_opt_in) ... ok
 test_persian_numbers_explain_two_token_difference (test_core.AnalysisTests.test_persian_numbers_explain_two_token_difference) ... ok
+test_quoted_punctuation_examples (test_core.AnalysisTests.test_quoted_punctuation_examples) ... ok
+test_quoted_symbols_across_quote_styles (test_core.AnalysisTests.test_quoted_symbols_across_quote_styles) ... ok
 test_quotes_and_repeated_endings (test_core.AnalysisTests.test_quotes_and_repeated_endings) ... ok
+test_real_quoted_sentences_still_split (test_core.AnalysisTests.test_real_quoted_sentences_still_split) ... ok
 test_sample_exactly_300_words (test_core.AnalysisTests.test_sample_exactly_300_words) ... ok
 test_ties_follow_source_order (test_core.AnalysisTests.test_ties_follow_source_order) ... ok
 test_titles_and_initials (test_core.AnalysisTests.test_titles_and_initials) ... ok
 test_top_n (test_core.AnalysisTests.test_top_n) ... ok
+test_unmatched_quote_does_not_hide_endings (test_core.AnalysisTests.test_unmatched_quote_does_not_hide_endings) ... ok
 test_unspaced_script_warning (test_core.AnalysisTests.test_unspaced_script_warning) ... ok
+test_uploaded_persian_report_regression (test_core.AnalysisTests.test_uploaded_persian_report_regression) ... ok
 
 ----------------------------------------------------------------------
-Ran 44 tests in 0.622s
+Ran 49 tests in 0.655s
 
 OK

@@ -151,6 +151,38 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(result.singleton_word_count, 3)
         self.assertEqual(result.sentence_count, 1)
 
+    def test_quoted_punctuation_examples(self):
+        text = 'برنامه باید نشانه‌های «،»، «؛»، «؟» و «!» را مدیریت کند.'
+        result = analyze(text)
+        self.assertEqual(result.sentence_count, 1)
+        self.assertEqual(result.sentences, [text])
+
+    def test_quoted_symbols_across_quote_styles(self):
+        for opening, closing in [('«', '»'), ('“', '”'), ('"', '"'),
+                                 ("'", "'"), ('「', '」'), ('『', '』')]:
+            with self.subTest(opening=opening):
+                text = f'Use {opening}?!{closing} carefully. Next sentence.'
+                self.assertEqual(analyze(text).sentence_count, 2)
+
+    def test_real_quoted_sentences_still_split(self):
+        result = analyze('او گفت «سلام!» سپس رفت. خوبی؟')
+        self.assertEqual(result.sentence_count, 3)
+        self.assertEqual(result.sentences[0], 'او گفت «سلام!»')
+
+    def test_unmatched_quote_does_not_hide_endings(self):
+        self.assertEqual(analyze('Hello «world! Next sentence.').sentence_count, 2)
+
+    def test_uploaded_persian_report_regression(self):
+        path = Path(__file__).resolve().parents[1] / 'examples' / 'persian_regression.txt'
+        text = path.read_text(encoding='utf-8')
+        for include_numbers, expected in [(False, (19, 298, 181, 130)),
+                                           (True, (19, 300, 183, 132))]:
+            result = analyze(text, AnalysisOptions(persian_normalization=True,
+                                                  include_numbers=include_numbers))
+            self.assertEqual((result.sentence_count, result.word_count,
+                              result.unique_word_count, result.singleton_word_count), expected)
+            self.assertEqual(result.top_words[0], {'word': 'و', 'count': 16})
+
     def test_bad_input(self):
         with self.assertRaises(TypeError):
             analyze(None)

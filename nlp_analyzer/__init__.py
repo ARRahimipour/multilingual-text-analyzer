@@ -2,4 +2,4 @@
 from .core import AnalysisOptions, AnalysisResult, analyze
 
 __all__ = ['AnalysisOptions', 'AnalysisResult', 'analyze']
-__version__ = '1.1.0'
+__version__ = '1.1.1'

@@ -15,7 +15,7 @@ class AnalyzerWindow:
         self.pending = None
         self.result = None
         self.input_path = None
-        root.title('NLP Text Analyzer | ARRahimipour')
+        root.title('NLP Text Analyzer v1.1.1 | ARRahimipour')
         root.geometry('1180x880')
         root.minsize(850, 760)
         root.configure(background='#f2f5f9')

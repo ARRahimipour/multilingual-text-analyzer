@@ -80,6 +80,23 @@ def tokenize_words(text: str, include_numbers: bool = False) -> list[str]:
     return words
 
 
+def _quoted_symbol_positions(text: str) -> set[int]:
+    """Protect quoted punctuation examples, but not actual quoted sentences.
+
+    A balanced quotation containing no letters or numbers denotes symbols,
+    such as «؟» or "!". Its internal punctuation is not a sentence boundary.
+    """
+    protected = set()
+    for opening, closing in [('«', '»'), ('“', '”'), ('‘', '’'),
+                             ('"', '"'), ("'", "'"), ('「', '」'), ('『', '』')]:
+        pattern = re.escape(opening) + '([^' + re.escape(opening + closing) + ']*)' + re.escape(closing)
+        for match in re.finditer(pattern, text):
+            content = match.group(1)
+            if content and not any(unicodedata.category(c)[0] in {'L', 'N'} for c in content):
+                protected.update(range(match.start(1), match.end(1)))
+    return protected
+
+
 def split_sentences(text: str) -> list[str]:
     """Split common multilingual endings; protect decimals and common titles.
 
@@ -89,9 +106,10 @@ def split_sentences(text: str) -> list[str]:
     sentences = []
     for paragraph in re.split(r'\n\s*\n', text):
         start, index = 0, 0
+        protected = _quoted_symbol_positions(paragraph)
         while index < len(paragraph):
             char = paragraph[index]
-            if char not in ENDINGS:
+            if char not in ENDINGS or index in protected:
                 index += 1
                 continue
             if char == '.':
