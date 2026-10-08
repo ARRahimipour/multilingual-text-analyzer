@@ -1,18 +1,26 @@
 # Verification record
 
-Validation date: 2026-10-07.
+Validation date: 2026-10-08.
 
 ## Executed
 
-- Python 3.12.14 on Linux: `python -m unittest discover -s tests -v` — 39 tests passed.
-- `python main.py examples/english_300.txt --strict` — exit code 0, 300 words, 26 sentences, 207 unique vocabulary items.
+- Python 3.12.14 on Linux: `python -m unittest discover -s tests -v` — 44 tests passed.
+- `python main.py examples/english_300.txt` — exit code 0, 300 words, 26 sentences, 207 unique vocabulary items.
 - The sample also contains exactly 300 whitespace-separated items.
-- CLI subprocess tests cover literal strings, stdin, input files, output files, JSON parsing, strict failure, missing files, invalid UTF-8, and overwrite protection.
+- CLI subprocess tests cover literal strings, stdin, input files, output files, JSON parsing, arbitrary text lengths, missing files, invalid UTF-8, and overwrite protection.
 - Word-count invariants and multilingual subcases pass under the stated counting policy.
 - Python compilation succeeds for the package, including the GUI module.
 - Exported HTML escapes input and contains a sentence audit and vocabulary. JSON contains the full analysis.
 
 The captured automated test output is in `test-results.txt`.
+
+## Version 1.1 checks
+
+- Input lengths of 0, 1, 298, 300, 301, and 10,000 tokens return successful CLI results with exact counts.
+- Removed target fields and PASS/CHECK messages are checked in exported results.
+- An independently counted multilingual fixture verifies total, unique, singleton, and frequency calculations.
+- A Persian fixture verifies that enabling numeric tokens adds exactly two tokens for the years ۱۴۰۵ and ۲۰۲۶.
+- Author details and email/website hyperlinks are verified in report outputs.
 
 ## Not executed in this environment
 
@@ -21,7 +29,7 @@ The Tk desktop interface could not be launched because the execution environment
 ## Local GUI smoke test
 
 1. Run `python main.py --gui` on a graphical desktop with Tk installed.
-2. Select **Load 300-word sample** and confirm 26 / 300 / 207 / 166 plus PASS.
+2. Select **Load sample** and confirm 26 / 300 / 207 / 166 with no target status.
 3. Paste Persian text and toggle normalization; verify the intended vocabulary merge.
 4. Clear the editor; confirm all metrics return to zero.
 5. Export each report format and open it in a browser, text editor, or spreadsheet viewer.

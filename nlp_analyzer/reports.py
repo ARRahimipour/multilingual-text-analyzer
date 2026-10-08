@@ -4,6 +4,7 @@ import html
 import io
 import json
 from .core import AnalysisResult
+from .identity import AUTHOR_LINES, AUTHOR_EMAIL, AUTHOR_WEBSITE
 
 
 def render_report(result: AnalysisResult, format: str = 'text') -> str:
@@ -15,18 +16,17 @@ def render_report(result: AnalysisResult, format: str = 'text') -> str:
         writer.writerow(['word', 'count'])
         writer.writerows(result.frequencies.items())
         return buffer.getvalue()
-    status = 'PASS' if result.target_met else 'CHECK'
     if format == 'text':
         lines = ['NLP TEXT ANALYZER', '=' * 40,
                  f'Sentences: {result.sentence_count}', f'Words: {result.word_count}',
                  f'Unique words (vocabulary): {result.unique_word_count}',
                  f'Words appearing once: {result.singleton_word_count}',
-                 f'Target: {result.options["target_words"]} words [{status}]', '',
+                 '',
                  f'Top {len(result.top_words)} words (ties: first appearance):']
         lines += [f'{i:>2}. {row["word"]}  {row["count"]}' for i, row in enumerate(result.top_words, 1)]
         lines += ['\nCounting options: ' + json.dumps(result.options)]
         lines += ['WARNING: ' + warning for warning in result.warnings]
-        lines += ['\nPASS checks the word-count target only; it is not a grading guarantee.']
+        lines += ['\n' + '\n'.join(AUTHOR_LINES)]
         return '\n'.join(lines) + '\n'
     if format != 'html':
         raise ValueError(f'Unsupported report format: {format}')
@@ -41,6 +41,9 @@ def render_report(result: AnalysisResult, format: str = 'text') -> str:
     sentences = ''.join(f'<li dir="auto">{escape(sentence)}</li>' for sentence in result.sentences)
     warnings = ''.join(f'<p class="warning">{escape(warning)}</p>' for warning in result.warnings)
     vocabulary = ', '.join(result.frequencies)
+    author_block = '<br>'.join(escape(line) for line in AUTHOR_LINES[:3])
+    author_block += (f'<br><a href="mailto:{escape(AUTHOR_EMAIL)}">{escape(AUTHOR_EMAIL)}</a>'
+                     f'<br><a href="https://{escape(AUTHOR_WEBSITE)}">{escape(AUTHOR_WEBSITE)}</a>')
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NLP Text Analysis Report</title><style>
@@ -56,11 +59,11 @@ section{{margin:18px 0}}h2{{font-size:21px;margin:0 0 18px}}table{{border-collap
 @media print{{body{{background:white}}main{{margin:0;padding:0}}section,article{{break-inside:avoid}}}}
 </style></head><body><main><header><div class="eyebrow">NLP / SESSION 01</div><h1>Language, counted.</h1>
 <p class="sub">Sentence tokenization · Word tokenization · Frequency analysis</p>
-<span class="badge">{status} · {result.word_count} / {result.options['target_words']} words</span></header>
+<span class="badge">{result.word_count} words · No word-count limit</span></header>
 {warnings}<div class="cards">{cards}</div><section><h2>Top {len(result.top_words)} words</h2>
 <table><thead><tr><th>Rank</th><th>Word</th><th>Relative frequency</th><th>Count</th></tr></thead><tbody>{rows}</tbody></table></section>
 <section><h2>Sentence audit</h2><ol>{sentences}</ol></section><section><h2>Unique vocabulary</h2><p dir="auto">{escape(vocabulary)}</p></section>
 <section><h2>Counting rules</h2><pre>{escape(json.dumps(result.options, indent=2))}</pre>
 <p>Ties follow first appearance. Stopwords are retained. Sentence boundaries use documented heuristics.
-PASS checks the word-count target only; it is not a grading guarantee.</p></section>
-<footer>ARRahimipour · NLP Text Analyzer · Offline, reproducible analysis</footer></main></body></html>'''
+Texts of any length are accepted. Pure numbers are counted only when enabled.</p></section>
+<footer>{author_block}</footer></main></body></html>'''

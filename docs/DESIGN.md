@@ -1,5 +1,7 @@
 # Design and homework walkthrough
 
+Version 1.1 accepts text of any length. The original 300-word assignment remains documented below only as background and a regression example.
+
 ## Requirements mapping
 
 | Homework requirement | Implementation | Evidence |
@@ -21,7 +23,7 @@
 6. Build a frequency table using `collections.Counter`.
 7. Count total tokens, vocabulary items, and singleton items.
 8. Rank vocabulary by descending frequency and first occurrence for ties.
-9. Compare the token count with the homework target and render results.
+9. Render results for any input length; no target or pass/fail status is applied.
 
 Sentence analysis and word analysis consume the same normalized source. Sentence boundaries do not change token counts. All interfaces call the same core function, avoiding inconsistent counting rules between outputs.
 

@@ -106,7 +106,6 @@ class AnalysisTests(unittest.TestCase):
         sample = Path(__file__).resolve().parents[1] / 'examples' / 'english_300.txt'
         result = analyze(sample.read_text(encoding='utf-8'))
         self.assertEqual((result.word_count, result.sentence_count, result.unique_word_count), (300, 26, 207))
-        self.assertTrue(result.target_met)
         self.assertEqual(result.top_words[0], {'word': 'the', 'count': 19})
 
     def test_invariants(self):
@@ -120,8 +119,37 @@ class AnalysisTests(unittest.TestCase):
         for value in [0, -1, 1.5, True]:
             with self.subTest(value=value), self.assertRaises(ValueError):
                 AnalysisOptions(top_n=value)
-        with self.assertRaises(ValueError):
-            AnalysisOptions(target_words=0)
+
+    def test_arbitrary_lengths(self):
+        for size in [0, 1, 298, 300, 301, 10000]:
+            with self.subTest(size=size):
+                result = analyze('word ' * size)
+                self.assertEqual(result.word_count, size)
+                self.assertEqual(result.unique_word_count, int(size > 0))
+                self.assertNotIn('target_met', result.to_dict())
+                self.assertNotIn('target_words', result.options)
+
+    def test_persian_numbers_explain_two_token_difference(self):
+        text = 'سال فارسی ۱۴۰۵ و سال انگلیسی ۲۰۲۶ است.'
+        without_numbers = analyze(text)
+        with_numbers = analyze(text, AnalysisOptions(include_numbers=True))
+        self.assertEqual(without_numbers.word_count, 6)
+        self.assertEqual(with_numbers.word_count, 8)
+        self.assertEqual(with_numbers.frequencies['سال'], 2)
+        self.assertEqual(with_numbers.frequencies['۱۴۰۵'], 1)
+        self.assertEqual(with_numbers.frequencies['۲۰۲۶'], 1)
+        self.assertEqual(with_numbers.sentence_count, 1)
+
+    def test_independently_counted_multilingual_frequencies(self):
+        from collections import Counter
+        words = ['hello', 'دنیا', 'नमस्ते', 'κόσμος', 'hello', 'دنیا', 'world']
+        result = analyze(' '.join(words) + '.', AnalysisOptions(case_sensitive=True))
+        expected = Counter(words)
+        self.assertEqual(result.frequencies, dict(expected))
+        self.assertEqual(result.word_count, len(words))
+        self.assertEqual(result.unique_word_count, len(set(words)))
+        self.assertEqual(result.singleton_word_count, 3)
+        self.assertEqual(result.sentence_count, 1)
 
     def test_bad_input(self):
         with self.assertRaises(TypeError):

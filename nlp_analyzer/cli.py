@@ -20,8 +20,6 @@ def main(argv=None):
     source.add_argument('--text', help='Analyze a literal string')
     source.add_argument('--gui', action='store_true', help='Launch the desktop interface')
     parser.add_argument('--top', type=positive_int, default=10, help='Number of frequent words (default: 10)')
-    parser.add_argument('--target', type=positive_int, default=300, help='Homework word target (default: 300)')
-    parser.add_argument('--strict', action='store_true', help='Exit 1 if the word target is not met')
     parser.add_argument('--case-sensitive', action='store_true')
     parser.add_argument('--persian', action='store_true', help='Normalize Arabic yeh/kaf to Persian forms')
     parser.add_argument('--include-numbers', action='store_true')
@@ -46,8 +44,8 @@ def main(argv=None):
             if sys.stdin.isatty():
                 parser.error('provide a file, --text, piped input, or --gui')
             text = sys.stdin.read()
-        result = analyze(text, AnalysisOptions(args.top, args.target, args.case_sensitive,
-                                              args.persian, args.include_numbers))
+        result = analyze(text, AnalysisOptions(top_n=args.top, case_sensitive=args.case_sensitive,
+                                              persian_normalization=args.persian, include_numbers=args.include_numbers))
         report = render_report(result, args.format)
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -56,7 +54,7 @@ def main(argv=None):
             sys.stdout.write(report)
         for warning in result.warnings:
             print('Warning: ' + warning, file=sys.stderr)
-        return 1 if args.strict and not result.target_met else 0
+        return 0
     except (OSError, UnicodeError, ValueError) as exc:
         parser.exit(2, f'Error: {exc}\n')
 

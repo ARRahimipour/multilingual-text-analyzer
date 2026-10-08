@@ -14,13 +14,12 @@ ABBREVIATIONS = {'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'st', 'vs', 'etc',
 class AnalysisOptions:
     """Explicit counting rules; defaults preserve stopwords for homework."""
     top_n: int = 10
-    target_words: int = 300
     case_sensitive: bool = False
     persian_normalization: bool = False
     include_numbers: bool = False
 
     def __post_init__(self):
-        for name in ('top_n', 'target_words'):
+        for name in ('top_n',):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
                 raise ValueError(f'{name} must be a positive integer.')
@@ -32,7 +31,6 @@ class AnalysisResult:
     word_count: int
     unique_word_count: int
     singleton_word_count: int
-    target_met: bool
     top_words: list[dict]
     frequencies: dict[str, int]
     sentences: list[str]
@@ -147,7 +145,6 @@ def analyze(text: str, options: AnalysisOptions | None = None) -> AnalysisResult
     return AnalysisResult(
         sentence_count=len(sentences), word_count=len(tokens), unique_word_count=len(counts),
         singleton_word_count=sum(count == 1 for count in counts.values()),
-        target_met=len(tokens) == options.target_words,
         top_words=[{'word': word, 'count': count} for word, count in ranking[:options.top_n]],
         frequencies=dict(ranking), sentences=sentences, tokens=tokens,
         warnings=warnings, options=asdict(options),

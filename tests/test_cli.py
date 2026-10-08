@@ -19,15 +19,37 @@ def run_cli(*args, input=None):
 
 
 class CLITests(unittest.TestCase):
-    def test_sample_strict_pass(self):
-        process = run_cli('examples/english_300.txt', '--strict', '--format', 'json')
+    def test_sample(self):
+        process = run_cli('examples/english_300.txt', '--format', 'json')
         self.assertEqual(process.returncode, 0, process.stderr)
         self.assertEqual(json.loads(process.stdout)['word_count'], 300)
 
-    def test_target_failure(self):
-        process = run_cli('--text', 'Hello world.', '--strict')
-        self.assertEqual(process.returncode, 1)
-        self.assertIn('[CHECK]', process.stdout)
+    def test_arbitrary_length_success(self):
+        for size in [0, 1, 298, 300, 301, 10000]:
+            with self.subTest(size=size):
+                process = run_cli('--format', 'json', input='word ' * size)
+                self.assertEqual(process.returncode, 0, process.stderr)
+                data = json.loads(process.stdout)
+                self.assertEqual(data['word_count'], size)
+                self.assertNotIn('target_met', data)
+
+    def test_no_target_status_in_reports(self):
+        result = analyze('Short text.')
+        for format in ['text', 'html']:
+            report = render_report(result, format)
+            self.assertNotIn('PASS', report)
+            self.assertNotIn('CHECK', report)
+            self.assertNotIn('300', report)
+
+    def test_author_details_in_reports(self):
+        from nlp_analyzer.identity import AUTHOR_LINES
+        for format in ['text', 'html']:
+            report = render_report(analyze('Hello.'), format)
+            for line in AUTHOR_LINES:
+                self.assertIn(line, report)
+        html = render_report(analyze('Hello.'), 'html')
+        self.assertIn('href="mailto:info@arrahimipour.com"', html)
+        self.assertIn('href="https://arrahimipour.com"', html)
 
     def test_pipe(self):
         process = run_cli('--format', 'json', input='سلام دنیا!')

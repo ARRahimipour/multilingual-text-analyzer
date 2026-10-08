@@ -1,10 +1,10 @@
 # NLP Text Analyzer
 
-**NLP Session 1 homework · Python · Offline · Unicode-aware**
+**NLP text analysis · Python · Offline · Unicode-aware · No word-count limit**
 
 Maintainer: **ARRahimipour** · **arrahimipourdev@gmail.com**
 
-Analyze a 300-word text and report its sentence count, word count, unique vocabulary, and ten most frequent words. The project follows the first NLP pipeline in the provided `NLP_Session1_White.pdf`: raw text → sentence tokenization → word tokenization → frequency analysis.
+Analyze text of any length and report its sentence count, word count, unique vocabulary, and ten most frequent words. The project follows the first NLP pipeline in the provided `NLP_Session1_White.pdf`: raw text → sentence tokenization → word tokenization → frequency analysis.
 
 ## Quick start
 
@@ -13,7 +13,7 @@ Requires Python **3.10 or newer**. No pip packages, downloaded models, account, 
 Extract the ZIP and open a terminal inside `nlp-text-analyzer`.
 
 ```bash
-python main.py examples/english_300.txt --strict
+python main.py examples/english_300.txt
 ```
 
 On systems where Python is named `python3`, use `python3` instead. On Windows, `py` may also be used.
@@ -24,7 +24,7 @@ On systems where Python is named `python3`, use `python3` instead. On Windows, `
 python main.py --gui
 ```
 
-Click **Load 300-word sample**, paste your own text, or use **Open text**. Metrics update automatically. **Export report** saves HTML, JSON, CSV, or plain text. Ctrl+O opens a file; Ctrl+S exports. A graphical desktop and a Python installation with Tk are required. If your Linux Python lacks Tk, install your distribution's Python Tk package (often `python3-tk`). The CLI works without Tk. Complex script rendering in Tk depends on the operating system; the HTML report uses browser text shaping and automatic text direction.
+Click **Load sample**, paste your own text, or use **Open text**. Metrics update automatically. **Export report** saves HTML, JSON, CSV, or plain text. Ctrl+O opens a file; Ctrl+S exports. A graphical desktop and a Python installation with Tk are required. If your Linux Python lacks Tk, install your distribution's Python Tk package (often `python3-tk`). The CLI works without Tk. Complex script rendering in Tk depends on the operating system; the HTML report uses browser text shaping and automatic text direction.
 
 ### Submit-ready sample
 
@@ -36,7 +36,6 @@ Click **Load 300-word sample**, paste your own text, or use **Open text**. Metri
 | Words | 300 |
 | Unique vocabulary items | 207 |
 | Words appearing exactly once | 166 |
-| Word-count target | PASS |
 
 | Rank | Word | Count |
 | --- | --- | ---: |
@@ -53,7 +52,7 @@ Click **Load 300-word sample**, paste your own text, or use **Open text**. Metri
 
 Open `examples/english_300_report.html` in a browser for a formatted report with the full sentence audit and vocabulary. The matching JSON report contains every token, sentence, frequency, and counting option.
 
-**PASS means that the selected word-count target is met. It does not claim universal linguistic accuracy or guarantee an instructor's grade.**
+**There is no 300-word restriction, target, or PASS/CHECK status. The included 300-word text is only a reproducible example.**
 
 ## Command-line examples
 
@@ -72,9 +71,6 @@ python main.py examples/english_300.txt --format html --output outputs/report.ht
 python main.py examples/english_300.txt --format json --output outputs/report.json
 python main.py examples/english_300.txt --format csv --output outputs/vocabulary.csv
 
-# Strict target checking for scripts or automated grading workflows.
-python main.py examples/english_300.txt --target 300 --strict
-
 # Equivalent module entry point.
 python -m nlp_analyzer examples/english_300.txt
 ```
@@ -84,8 +80,6 @@ Omit both the filename and `--text` to read piped standard input. Use UTF-8 for 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `--top N` | 10 | Maximum number of frequent words |
-| `--target N` | 300 | Expected number of word tokens |
-| `--strict` | Off | Return status 1 when the target is not met |
 | `--case-sensitive` | Off | Keep uppercase and lowercase variants separate |
 | `--persian` | Off | Convert Arabic yeh/alef maksura/kaf to Persian forms and remove tatweel |
 | `--include-numbers` | Off | Include purely numeric tokens |
@@ -93,7 +87,7 @@ Omit both the filename and `--text` to read piped standard input. Use UTF-8 for 
 | `--output PATH` | stdout | Write a UTF-8 report |
 | `--gui` | Off | Launch the desktop interface |
 
-Exit codes: **0** for successful analysis (or matching strict target), **1** for a strict target mismatch, **2** for invalid arguments, unreadable files, invalid UTF-8, or unavailable GUI. CLI analysis options apply to CLI analysis; the GUI uses its own controls and the homework defaults of 300 words and top 10.
+Exit codes: **0** for successful analysis at any word count, **2** for invalid arguments, unreadable files, invalid UTF-8, or unavailable GUI. CLI options apply to CLI analysis; the GUI uses its own controls and shows the top ten words. The old `--strict` and `--target` options have been removed.
 
 ## Counting policy
 
@@ -136,7 +130,7 @@ print(result.top_words)
 python -m unittest discover -s tests -v
 ```
 
-The automated suite contains **39 tests**, including multilingual subcases, a hand-counted example, the exact 300-word sample, invariants, CLI subprocess execution, exports, UTF-8 failures, input-overwrite protection, and HTML escaping. See `docs/test-results.txt` for the captured run and `docs/VERIFICATION.md` for tested scope and limitations. No third-party test runner is required.
+The automated suite contains **44 tests**, including multilingual subcases, a hand-counted example, the exact 300-word sample, invariants, CLI subprocess execution, arbitrary input lengths, author details, exports, UTF-8 failures, input-overwrite protection, and HTML escaping. See `docs/test-results.txt` for the captured run and `docs/VERIFICATION.md` for tested scope and limitations. No third-party test runner is required.
 
 ## Project layout
 
@@ -153,6 +147,20 @@ nlp-text-analyzer/
   docs/                       Design explanation and verification record
   history.bundle              Portable Git history, included in release ZIP
 ```
+
+## Author
+
+Alireza Rahimipour Anaraki
+
+Ph.D. Candidate in Computer Engineering – Artificial Intelligence
+
+Department of Computer Engineering, NT.B, Islamic Azad University, Tehran, Iran
+
+info@arrahimipour.com
+
+arrahimipour.com
+
+The author block appears below the desktop workspace and in HTML and plain-text reports. Desktop and HTML email/website links are clickable.
 
 ## Git history and identity
 

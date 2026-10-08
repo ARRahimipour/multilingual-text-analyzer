@@ -1,10 +1,12 @@
 """Offline desktop interface built with the standard Tk toolkit."""
 from pathlib import Path
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from .core import AnalysisOptions, analyze
 from .reports import render_report
+from .identity import AUTHOR_LINES, AUTHOR_EMAIL, AUTHOR_WEBSITE
 
 
 class AnalyzerWindow:
@@ -14,8 +16,8 @@ class AnalyzerWindow:
         self.result = None
         self.input_path = None
         root.title('NLP Text Analyzer | ARRahimipour')
-        root.geometry('1120x780')
-        root.minsize(850, 640)
+        root.geometry('1180x880')
+        root.minsize(850, 760)
         root.configure(background='#f2f5f9')
         style = ttk.Style(root)
         style.theme_use('clam')
@@ -32,7 +34,7 @@ class AnalyzerWindow:
         ttk.Label(outer, text='NLP / SESSION 01  ·  Sentence, word and frequency analysis').pack(anchor='w', pady=(4, 16))
         toolbar = ttk.Frame(outer)
         toolbar.pack(fill='x')
-        for label, command in [('Open text', self.open_file), ('Load 300-word sample', self.load_sample),
+        for label, command in [('Open text', self.open_file), ('Load sample', self.load_sample),
                                ('Export report', self.export), ('Clear', self.clear)]:
             ttk.Button(toolbar, text=label, command=command).pack(side='left', padx=(0, 8))
         self.case = tk.BooleanVar(value=False)
@@ -77,8 +79,22 @@ class AnalyzerWindow:
         self.table.pack(fill='both', expand=True)
         self.status = ttk.Label(outer, text='', wraplength=1000)
         self.status.pack(fill='x', pady=(14, 4))
-        ttk.Label(outer, text='All processing stays on your computer. PASS checks only the 300-word target.',
+        ttk.Label(outer, text='Offline analysis · Numbers are excluded unless Include numbers is selected.',
                   font=('Arial', 9)).pack(anchor='w')
+        ttk.Separator(outer, orient='horizontal').pack(fill='x', pady=(12, 8))
+        author = ttk.Frame(outer)
+        author.pack(fill='x')
+        for index, line in enumerate(AUTHOR_LINES[:3]):
+            label = ttk.Label(author, text=line, wraplength=780,
+                              font=('Arial', 10, 'bold') if index == 0 else ('Arial', 9))
+            label.pack(anchor='w')
+        for text, url in [(AUTHOR_EMAIL, 'mailto:' + AUTHOR_EMAIL),
+                          (AUTHOR_WEBSITE, 'https://' + AUTHOR_WEBSITE)]:
+            link = ttk.Label(author, text=text, foreground='#176b61', cursor='hand2',
+                             font=('Arial', 9, 'underline'), takefocus=True)
+            link.pack(anchor='w')
+            link.bind('<Button-1>', lambda event, address=url: webbrowser.open(address))
+            link.bind('<Return>', lambda event, address=url: webbrowser.open(address))
         root.bind('<Control-o>', lambda event: self.open_file())
         root.bind('<Control-s>', lambda event: self.export())
         self.refresh()
@@ -105,8 +121,7 @@ class AnalyzerWindow:
             self.table.delete(item)
         for index, row in enumerate(self.result.top_words, 1):
             self.table.insert('', 'end', values=(index, row['word'], row['count']))
-        delta = 300 - self.result.word_count
-        status = 'PASS · Exactly 300 words' if delta == 0 else f'CHECK · {abs(delta)} words {"remaining" if delta > 0 else "over target"}'
+        status = 'Analysis complete · No word-count limit'
         if self.result.warnings:
             status += ' | ' + self.result.warnings[0]
         self.status.configure(text=status)

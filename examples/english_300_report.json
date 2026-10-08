@@ -3,7 +3,6 @@
   "word_count": 300,
   "unique_word_count": 207,
   "singleton_word_count": 166,
-  "target_met": true,
   "top_words": [
     {
       "word": "the",
@@ -588,7 +587,6 @@
   "warnings": [],
   "options": {
     "top_n": 10,
-    "target_words": 300,
     "case_sensitive": false,
     "persian_normalization": false,
     "include_numbers": false

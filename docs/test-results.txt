@@ -1,4 +1,6 @@
 test_all_formats (test_cli.CLITests.test_all_formats) ... ok
+test_arbitrary_length_success (test_cli.CLITests.test_arbitrary_length_success) ... ok
+test_author_details_in_reports (test_cli.CLITests.test_author_details_in_reports) ... ok
 test_bad_report_format (test_cli.CLITests.test_bad_report_format) ... ok
 test_empty_literal (test_cli.CLITests.test_empty_literal) ... ok
 test_empty_reports (test_cli.CLITests.test_empty_reports) ... ok
@@ -6,12 +8,13 @@ test_export_and_invalid_utf8 (test_cli.CLITests.test_export_and_invalid_utf8) ..
 test_html_escapes_input (test_cli.CLITests.test_html_escapes_input) ... ok
 test_invalid_top (test_cli.CLITests.test_invalid_top) ... ok
 test_missing_file (test_cli.CLITests.test_missing_file) ... ok
+test_no_target_status_in_reports (test_cli.CLITests.test_no_target_status_in_reports) ... ok
 test_pipe (test_cli.CLITests.test_pipe) ... ok
 test_prevent_input_overwrite (test_cli.CLITests.test_prevent_input_overwrite) ... ok
-test_sample_strict_pass (test_cli.CLITests.test_sample_strict_pass) ... ok
-test_target_failure (test_cli.CLITests.test_target_failure) ... ok
+test_sample (test_cli.CLITests.test_sample) ... ok
 test_warning_keeps_json_valid (test_cli.CLITests.test_warning_keeps_json_valid) ... ok
 test_arabic_marks (test_core.AnalysisTests.test_arabic_marks) ... ok
+test_arbitrary_lengths (test_core.AnalysisTests.test_arbitrary_lengths) ... ok
 test_bad_input (test_core.AnalysisTests.test_bad_input) ... ok
 test_bad_options (test_core.AnalysisTests.test_bad_options) ... ok
 test_bom_and_newlines (test_core.AnalysisTests.test_bom_and_newlines) ... ok
@@ -22,6 +25,7 @@ test_decimals_do_not_split_sentences (test_core.AnalysisTests.test_decimals_do_n
 test_empty_and_punctuation (test_core.AnalysisTests.test_empty_and_punctuation) ... ok
 test_hand_counted_example (test_core.AnalysisTests.test_hand_counted_example) ... ok
 test_hyphens_and_emoji (test_core.AnalysisTests.test_hyphens_and_emoji) ... ok
+test_independently_counted_multilingual_frequencies (test_core.AnalysisTests.test_independently_counted_multilingual_frequencies) ... ok
 test_invariants (test_core.AnalysisTests.test_invariants) ... ok
 test_language_smoke_cases (test_core.AnalysisTests.test_language_smoke_cases) ... ok
 test_missing_final_punctuation (test_core.AnalysisTests.test_missing_final_punctuation) ... ok
@@ -31,6 +35,7 @@ test_numbers (test_core.AnalysisTests.test_numbers) ... ok
 test_paragraphs_and_wrapping (test_core.AnalysisTests.test_paragraphs_and_wrapping) ... ok
 test_persian_joiner_and_question (test_core.AnalysisTests.test_persian_joiner_and_question) ... ok
 test_persian_normalization_is_opt_in (test_core.AnalysisTests.test_persian_normalization_is_opt_in) ... ok
+test_persian_numbers_explain_two_token_difference (test_core.AnalysisTests.test_persian_numbers_explain_two_token_difference) ... ok
 test_quotes_and_repeated_endings (test_core.AnalysisTests.test_quotes_and_repeated_endings) ... ok
 test_sample_exactly_300_words (test_core.AnalysisTests.test_sample_exactly_300_words) ... ok
 test_ties_follow_source_order (test_core.AnalysisTests.test_ties_follow_source_order) ... ok
@@ -39,6 +44,6 @@ test_top_n (test_core.AnalysisTests.test_top_n) ... ok
 test_unspaced_script_warning (test_core.AnalysisTests.test_unspaced_script_warning) ... ok
 
 ----------------------------------------------------------------------
-Ran 39 tests in 0.685s
+Ran 44 tests in 0.622s
 
 OK
