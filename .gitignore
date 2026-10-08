@@ -7,3 +7,9 @@ outputs/
 build/
 dist/
 .DS_Store
+
+# Local tools and release archives
+.vscode/
+.idea/
+history.bundle
+*.zip

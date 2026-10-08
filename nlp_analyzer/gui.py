@@ -18,7 +18,7 @@ class AnalyzerWindow(QWidget):
         self.input_path = None
         self.result = None
         self.font_size = 15
-        self.setWindowTitle('NLP Text Analyzer v1.3.0 | ARRahimipour')
+        self.setWindowTitle('NLP Text Analyzer v1.3.1 | ARRahimipour')
         self.resize(1180, 880)
         self.setMinimumSize(850, 720)
         families = {f.casefold(): f for f in QFontDatabase.families()}

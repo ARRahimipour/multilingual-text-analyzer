@@ -1,0 +1,2 @@
+# Install the complete desktop application inside .venv.
+-r requirements-gui.txt
