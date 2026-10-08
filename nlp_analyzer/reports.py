@@ -4,6 +4,7 @@ import html
 import io
 import json
 from .core import AnalysisResult
+from .direction import text_direction
 from .identity import AUTHOR_LINES, AUTHOR_EMAIL, AUTHOR_WEBSITE
 
 
@@ -35,12 +36,13 @@ def render_report(result: AnalysisResult, format: str = 'text') -> str:
                     for label, value in [('Sentences', result.sentence_count), ('Words', result.word_count),
                                          ('Unique words', result.unique_word_count), ('Words appearing once', result.singleton_word_count)])
     maximum = result.top_words[0]['count'] if result.top_words else 1
-    rows = ''.join(f'<tr><td>{i}</td><td dir="auto">{escape(row["word"])}</td>'
+    rows = ''.join(f'<tr><td>{i}</td><td dir="{text_direction(row["word"])}">{escape(row["word"])}</td>'
                    f'<td><div class="bar" style="width:{row["count"] / maximum * 100:.2f}%"></div></td>'
                    f'<td>{row["count"]}</td></tr>' for i, row in enumerate(result.top_words, 1))
-    sentences = ''.join(f'<li dir="auto">{escape(sentence)}</li>' for sentence in result.sentences)
+    sentences = ''.join(f'<li dir="{text_direction(sentence)}">{escape(sentence)}</li>' for sentence in result.sentences)
     warnings = ''.join(f'<p class="warning">{escape(warning)}</p>' for warning in result.warnings)
     vocabulary = ', '.join(result.frequencies)
+    direction = text_direction(' '.join(result.sentences))
     author_block = '<br>'.join(escape(line) for line in AUTHOR_LINES[:3])
     author_block += (f'<br><a href="mailto:{escape(AUTHOR_EMAIL)}">{escape(AUTHOR_EMAIL)}</a>'
                      f'<br><a href="https://{escape(AUTHOR_WEBSITE)}">{escape(AUTHOR_WEBSITE)}</a>')
@@ -53,6 +55,7 @@ main{{max-width:1000px;margin:48px auto;padding:32px}}header{{border-bottom:1px 
 .sub{{color:#546579}}.cards{{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:28px 0}}
 article,section{{background:white;border:1px solid #dee5ed;border-radius:14px;padding:24px}}article strong{{display:block;font-size:36px}}article span{{font-size:13px;color:#546579}}
 section{{margin:18px 0}}h2{{font-size:21px;margin:0 0 18px}}table{{border-collapse:collapse;width:100%}}td,th{{padding:12px;text-align:left;border-bottom:1px solid #edf0f4}}td:nth-child(3){{width:40%}}
+[dir="rtl"], [dir="ltr"]{{text-align:start;unicode-bidi:isolate}}
 .bar{{height:10px;background:#198678;border-radius:8px}}.badge{{display:inline-block;background:#e2eee9;color:#225f50;padding:6px 12px;border-radius:8px;font-weight:600}}
 .warning{{background:#fff0ce;padding:14px;border-radius:8px}}li{{padding:8px 0}}pre{{white-space:pre-wrap;overflow-wrap:anywhere}}footer{{font-size:12px;color:#546579;margin-top:24px}}
 @media(max-width:650px){{main{{margin:0;padding:18px}}.cards{{grid-template-columns:repeat(2,1fr)}}h1{{font-size:30px}}td,th{{padding:6px}}}}
@@ -62,7 +65,7 @@ section{{margin:18px 0}}h2{{font-size:21px;margin:0 0 18px}}table{{border-collap
 <span class="badge">{result.word_count} words · No word-count limit</span></header>
 {warnings}<div class="cards">{cards}</div><section><h2>Top {len(result.top_words)} words</h2>
 <table><thead><tr><th>Rank</th><th>Word</th><th>Relative frequency</th><th>Count</th></tr></thead><tbody>{rows}</tbody></table></section>
-<section><h2>Sentence audit</h2><ol>{sentences}</ol></section><section><h2>Unique vocabulary</h2><p dir="auto">{escape(vocabulary)}</p></section>
+<section><h2>Sentence audit</h2><ol dir="{direction}">{sentences}</ol></section><section><h2>Unique vocabulary</h2><p dir="{direction}">{escape(vocabulary)}</p></section>
 <section><h2>Counting rules</h2><pre>{escape(json.dumps(result.options, indent=2))}</pre>
 <p>Ties follow first appearance. Stopwords are retained. Sentence boundaries use documented heuristics.
 Texts of any length are accepted. Pure numbers are counted only when enabled.</p></section>

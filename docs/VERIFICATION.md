@@ -4,7 +4,7 @@ Validation date: 2026-10-08.
 
 ## Executed
 
-- Python 3.12.14 on Linux: `python -m unittest discover -s tests -v` — 49 tests passed.
+- Python 3.12.14 on Linux: `python -m unittest discover -s tests -v` — 54 tests passed.
 - `python main.py examples/english_300.txt` — exit code 0, 300 words, 26 sentences, 207 unique vocabulary items.
 - The sample also contains exactly 300 whitespace-separated items.
 - CLI subprocess tests cover literal strings, stdin, input files, output files, JSON parsing, arbitrary text lengths, missing files, invalid UTF-8, and overwrite protection.
@@ -49,3 +49,7 @@ Verified against this full text:
 | Included | 19 | 300 | 183 | 132 |
 
 Additional regression tests cover several quote styles, actual quoted speech, and unmatched quotes. The desktop title displays v1.1.1 so users can identify the corrected release.
+
+## Version 1.2.0 automatic alignment
+
+Direction detection tests cover Persian, Arabic, English, numbers, mixed text, and ties. Mock-widget checks verify paragraph tags, clearing/reset behavior, and no text/cursor mutation. HTML checks verify explicit direction and logical alignment. These checks do not replace an actual desktop visual test; Tk remains unavailable in this environment.

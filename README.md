@@ -26,6 +26,12 @@ python main.py --gui
 
 Click **Load sample**, paste your own text, or use **Open text**. Metrics update automatically. **Export report** saves HTML, JSON, CSV, or plain text. Ctrl+O opens a file; Ctrl+S exports. A graphical desktop and a Python installation with Tk are required. If your Linux Python lacks Tk, install your distribution's Python Tk package (often `python3-tk`). The CLI works without Tk. Complex script rendering in Tk depends on the operating system; the HTML report uses browser text shaping and automatic text direction.
 
+### Automatic text alignment
+
+Version 1.2.0 aligns Persian/Arabic paragraphs to the right and English paragraphs to the left as you type, paste, or load a file. Unicode strong-character direction determines alignment; numbers and punctuation do not override it. Mixed paragraphs use the majority direction, with the first strong character breaking ties. The word column follows the overall text direction. HTML sentences and word cells use explicit directions and logical alignment.
+
+Alignment only changes display tags: it does not reverse text, insert direction controls, move the cursor, or change analysis counts. Tk handles glyph shaping and bidirectional rendering according to the local OS/Tk build; right alignment is not a replacement for a full bidirectional text engine.
+
 ### Submit-ready sample
 
 `examples/english_300.txt` is original text about the NLP pipeline. Its expected default result is:
@@ -131,7 +137,7 @@ print(result.top_words)
 python -m unittest discover -s tests -v
 ```
 
-The automated suite contains **49 tests**, including multilingual subcases, a hand-counted example, the exact 300-word sample, invariants, CLI subprocess execution, arbitrary input lengths, author details, exports, UTF-8 failures, input-overwrite protection, and HTML escaping. See `docs/test-results.txt` for the captured run and `docs/VERIFICATION.md` for tested scope and limitations. No third-party test runner is required.
+The automated suite contains **54 tests**, including multilingual subcases, a hand-counted example, the exact 300-word sample, invariants, CLI subprocess execution, arbitrary input lengths, author details, exports, UTF-8 failures, input-overwrite protection, and HTML escaping. See `docs/test-results.txt` for the captured run and `docs/VERIFICATION.md` for tested scope and limitations. No third-party test runner is required.
 
 ## Project layout
 

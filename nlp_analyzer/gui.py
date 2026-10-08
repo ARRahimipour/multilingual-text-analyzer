@@ -5,6 +5,7 @@ import webbrowser
 from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from .core import AnalysisOptions, analyze
+from .direction import align_editor
 from .reports import render_report
 from .identity import AUTHOR_LINES, AUTHOR_EMAIL, AUTHOR_WEBSITE
 
@@ -15,7 +16,7 @@ class AnalyzerWindow:
         self.pending = None
         self.result = None
         self.input_path = None
-        root.title('NLP Text Analyzer v1.1.1 | ARRahimipour')
+        root.title('NLP Text Analyzer v1.2.0 | ARRahimipour')
         root.geometry('1180x880')
         root.minsize(850, 760)
         root.configure(background='#f2f5f9')
@@ -67,6 +68,8 @@ class AnalyzerWindow:
                                    relief='flat', padx=14, pady=14, width=44, height=12,
                                    background='white', foreground='#192637', insertbackground='#176b61')
         self.editor.pack(fill='both', expand=True, padx=(0, 14))
+        self.editor.tag_configure('rtl', justify='right')
+        self.editor.tag_configure('ltr', justify='left')
         self.editor.bind('<<Modified>>', self.on_modified)
         ttk.Label(right, text='TOP 10 WORDS').pack(anchor='w', pady=(0, 8))
         self.table = ttk.Treeview(right, columns=('rank', 'word', 'count'), show='headings', height=10)
@@ -110,7 +113,11 @@ class AnalyzerWindow:
         if self.pending is not None:
             self.root.after_cancel(self.pending)
             self.pending = None
-        self.result = analyze(self.editor.get('1.0', 'end-1c'), AnalysisOptions(
+        text = self.editor.get('1.0', 'end-1c')
+        direction = align_editor(self.editor, text)
+        self.table.column('word', anchor='e' if direction == 'rtl' else 'w')
+        self.table.heading('word', anchor='e' if direction == 'rtl' else 'w')
+        self.result = analyze(text, AnalysisOptions(
             case_sensitive=self.case.get(), persian_normalization=self.persian.get(),
             include_numbers=self.numbers.get()))
         values = [self.result.sentence_count, self.result.word_count,

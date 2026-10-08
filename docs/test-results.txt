@@ -47,8 +47,13 @@ test_top_n (test_core.AnalysisTests.test_top_n) ... ok
 test_unmatched_quote_does_not_hide_endings (test_core.AnalysisTests.test_unmatched_quote_does_not_hide_endings) ... ok
 test_unspaced_script_warning (test_core.AnalysisTests.test_unspaced_script_warning) ... ok
 test_uploaded_persian_report_regression (test_core.AnalysisTests.test_uploaded_persian_report_regression) ... ok
+test_alignment_does_not_change_counts (test_direction.DirectionTests.test_alignment_does_not_change_counts) ... ok
+test_editor_switches_alignment_without_editing_content (test_direction.DirectionTests.test_editor_switches_alignment_without_editing_content) ... ok
+test_html_direction (test_direction.DirectionTests.test_html_direction) ... ok
+test_mixed_text_uses_dominant_direction (test_direction.DirectionTests.test_mixed_text_uses_dominant_direction) ... ok
+test_persian_arabic_and_english (test_direction.DirectionTests.test_persian_arabic_and_english) ... ok
 
 ----------------------------------------------------------------------
-Ran 49 tests in 0.655s
+Ran 54 tests in 0.651s
 
 OK
