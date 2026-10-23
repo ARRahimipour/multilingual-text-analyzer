@@ -108,3 +108,19 @@ class DesktopTests(unittest.TestCase):
         self.assertEqual(self.window.font_size, 24)
         self.window.resize_text(-100)
         self.assertEqual(self.window.font_size, 11)
+
+    def test_cleaning_preset_preview_does_not_change_input(self):
+        raw = '<p>كِتاب&nbsp;عالی 😍</p>'
+        self.window.set_text(raw)
+        self.window.clean_preset.setCurrentText('Topic')
+        self.assertEqual(self.window.editor.toPlainText(), raw)
+        self.assertNotIn('<p>', self.window.clean_preview.toPlainText())
+        self.assertNotIn('😍', self.window.clean_preview.toPlainText())
+        self.assertIsNotNone(self.window.result.cleaning_statistics)
+
+    def test_pii_masking_is_reflected_in_preview(self):
+        self.window.clean_preset.setCurrentText('General')
+        self.window.mask_pii.setChecked(True)
+        self.window.set_text('Contact info@example.com')
+        self.assertIn('<EMAIL>', self.window.clean_preview.toPlainText())
+        self.assertNotIn('info@example.com', self.window.result.cleaned_text)

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.0 — Session 2 through slide 17
+
+- Added opt-in task-specific text preprocessing and step-by-step audit statistics.
+- Added HTML/entity/script/style handling, URL/email/mention/hashtag processing,
+  Unicode NFKC/Persian characters/digits, invisible control cleanup, emojis,
+  punctuation, elongated letters and optional Persian-PII masking.
+- Retained sentence boundaries before destructive punctuation cleaning and kept
+  original Session 1 counts unchanged in raw mode.
+- Added dataset cleaning for CSV/TSV/JSONL, script/length filters, post-cleaning
+  exact and heuristic near-deduplication, and atomic output writing.
+- Extended CLI, desktop controls, cleaned preview, HTML/text/JSON audit export,
+  per-slide documentation and unit/integration tests.
+- 86 tests; 10 Qt integration tests require PySide6 and were skipped when
+  unavailable in the current check environment.
+
 ## 1.3.2
 
 - Fixed RTL paragraphs being visually left-aligned by using absolute edge alignment.

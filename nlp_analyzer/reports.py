@@ -26,6 +26,14 @@ def render_report(result: AnalysisResult, format: str = 'text') -> str:
                  f'Top {len(result.top_words)} words (ties: first appearance):']
         lines += [f'{i:>2}. {row["word"]}  {row["count"]}' for i, row in enumerate(result.top_words, 1)]
         lines += ['\nCounting options: ' + json.dumps(result.options)]
+        if result.cleaning_statistics:
+            stats = result.cleaning_statistics
+            stages = ', '.join(name for name, data in stats['changed_stages'].items() if data['changed']) or 'none'
+            lines += [f'Preprocessing characters: {stats["characters_before"]} -> {stats["characters_after"]}',
+                      f'UTF-8 bytes: {stats["utf8_bytes_before"]} -> {stats["utf8_bytes_after"]}',
+                      f'Words: {stats["words_before"]} -> {stats["words_after"]}; '
+                      f'vocabulary: {stats["vocabulary_before"]} -> {stats["vocabulary_after"]}',
+                      f'Changed stages: {stages}', 'Cleaned text:', result.cleaned_text]
         lines += ['WARNING: ' + warning for warning in result.warnings]
         lines += ['\n' + '\n'.join(AUTHOR_LINES)]
         return '\n'.join(lines) + '\n'
@@ -41,6 +49,18 @@ def render_report(result: AnalysisResult, format: str = 'text') -> str:
                    f'<td>{row["count"]}</td></tr>' for i, row in enumerate(result.top_words, 1))
     sentences = ''.join(f'<li dir="{text_direction(sentence)}">{escape(sentence)}</li>' for sentence in result.sentences)
     warnings = ''.join(f'<p class="warning">{escape(warning)}</p>' for warning in result.warnings)
+    cleaning = ''
+    if result.cleaning_statistics:
+        stats = result.cleaning_statistics
+        changed = ', '.join(name for name, data in stats['changed_stages'].items() if data['changed']) or 'none'
+        cleaning = (f'<section><h2>Session 2 · Preprocessing audit</h2>'
+                    f'<p>Unicode code points: {stats["characters_before"]} → {stats["characters_after"]}; '
+                    f'UTF-8 bytes: {stats["utf8_bytes_before"]} → {stats["utf8_bytes_after"]}</p>'
+                    f'<p>Tokens: {stats["words_before"]} → {stats["words_after"]}; '
+                    f'vocabulary: {stats["vocabulary_before"]} → {stats["vocabulary_after"]}</p>'
+                    f'<p>Changed stages: {escape(changed)}</p>'
+                    f'<h3>Cleaned text</h3><pre dir="{text_direction(result.cleaned_text)}">'
+                    f'{escape(result.cleaned_text)}</pre></section>')
     vocabulary = ', '.join(result.frequencies)
     direction = text_direction(' '.join(result.sentences))
     author_block = '<br>'.join(escape(line) for line in AUTHOR_LINES[:3])
@@ -61,9 +81,9 @@ section{{margin:18px 0}}h2{{font-size:21px;margin:0 0 18px}}table{{border-collap
 @media(max-width:650px){{main{{margin:0;padding:18px}}.cards{{grid-template-columns:repeat(2,1fr)}}h1{{font-size:30px}}td,th{{padding:6px}}}}
 @media print{{body{{background:white}}main{{margin:0;padding:0}}section,article{{break-inside:avoid}}}}
 </style></head><body><main><header><div class="eyebrow">NLP / SESSION 01</div><h1>Language, counted.</h1>
-<p class="sub">Sentence tokenization · Word tokenization · Frequency analysis</p>
+<p class="sub">Text cleaning · Unicode normalization · Sentence tokenization · Frequency analysis</p>
 <span class="badge">{result.word_count} words · No word-count limit</span></header>
-{warnings}<div class="cards">{cards}</div><section><h2>Top {len(result.top_words)} words</h2>
+{warnings}<div class="cards">{cards}</div>{cleaning}<section><h2>Top {len(result.top_words)} words</h2>
 <table><thead><tr><th>Rank</th><th>Word</th><th>Relative frequency</th><th>Count</th></tr></thead><tbody>{rows}</tbody></table></section>
 <section><h2>Sentence audit</h2><ol dir="{direction}">{sentences}</ol></section><section><h2>Unique vocabulary</h2><p dir="{direction}">{escape(vocabulary)}</p></section>
 <section><h2>Counting rules</h2><pre>{escape(json.dumps(result.options, indent=2))}</pre>

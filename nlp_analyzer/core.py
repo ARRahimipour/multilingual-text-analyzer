@@ -3,6 +3,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass
 import re
 import unicodedata
+from .preprocessing import PreprocessOptions, clean_text
 
 JOINERS = {"'", "\u200c", "\u200d"}
 ENDINGS = set('.!?؟。！？।॥…։።')
@@ -17,12 +18,15 @@ class AnalysisOptions:
     case_sensitive: bool = False
     persian_normalization: bool = False
     include_numbers: bool = False
+    preprocessing: PreprocessOptions | None = None
 
     def __post_init__(self):
         for name in ('top_n',):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 1:
                 raise ValueError(f'{name} must be a positive integer.')
+        if self.preprocessing is not None and not isinstance(self.preprocessing, PreprocessOptions):
+            raise TypeError('preprocessing must be PreprocessOptions or None.')
 
 
 @dataclass(frozen=True)
@@ -37,6 +41,8 @@ class AnalysisResult:
     tokens: list[str]
     warnings: list[str]
     options: dict
+    cleaned_text: str = ''
+    cleaning_statistics: dict | None = None
 
     def to_dict(self):
         return asdict(self)
@@ -147,11 +153,29 @@ def analyze(text: str, options: AnalysisOptions | None = None) -> AnalysisResult
     if not isinstance(text, str):
         raise TypeError('text must be a string.')
     options = options or AnalysisOptions()
-    normalized = normalize_text(text, options.persian_normalization)
-    sentences = split_sentences(normalized)
+    if options.preprocessing is not None:
+        cleaning = clean_text(text, options.preprocessing)
+        normalized = normalize_text(cleaning.text, options.persian_normalization)
+        # Snapshot retains sentence endings even in a topic-classification preset.
+        sentence_text = normalize_text(cleaning.sentence_text, options.persian_normalization)
+        cleaning_statistics = cleaning.statistics
+    else:
+        normalized = normalize_text(text, options.persian_normalization)
+        sentence_text = normalized
+        cleaning_statistics = None
+    sentences = split_sentences(sentence_text)
     raw_tokens = tokenize_words(normalized, options.include_numbers)
     tokens = raw_tokens if options.case_sensitive else [word.casefold() for word in raw_tokens]
     counts = Counter(tokens)
+    if cleaning_statistics is not None:
+        original_tokens = tokenize_words(normalize_text(text, options.persian_normalization),
+                                         options.include_numbers)
+        if not options.case_sensitive:
+            original_tokens = [word.casefold() for word in original_tokens]
+        cleaning_statistics['words_before'] = len(original_tokens)
+        cleaning_statistics['words_after'] = len(tokens)
+        cleaning_statistics['vocabulary_before'] = len(set(original_tokens))
+        cleaning_statistics['vocabulary_after'] = len(counts)
     # Stable insertion order resolves ties by first appearance in the source.
     ranking = counts.most_common()
     warnings = []
@@ -166,4 +190,5 @@ def analyze(text: str, options: AnalysisOptions | None = None) -> AnalysisResult
         top_words=[{'word': word, 'count': count} for word, count in ranking[:options.top_n]],
         frequencies=dict(ranking), sentences=sentences, tokens=tokens,
         warnings=warnings, options=asdict(options),
+        cleaned_text=normalized, cleaning_statistics=cleaning_statistics,
     )

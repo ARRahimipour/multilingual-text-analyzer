@@ -110,6 +110,39 @@ class CLITests(unittest.TestCase):
         with self.assertRaises(ValueError):
             render_report(analyze('a'), 'invalid')
 
+    def test_clean_preset_and_privacy_options(self):
+        process = run_cli('--text', 'RT @bob سالااام! #NLP ۱۲۳ 😍', '--clean-preset', 'topic',
+                          '--format', 'json')
+        self.assertEqual(process.returncode, 0, process.stderr)
+        result = json.loads(process.stdout)
+        self.assertEqual(result['sentence_count'], 2)
+        self.assertIn('سالام', result['tokens'])
+        self.assertIn('NLP', result['cleaned_text'])
+        self.assertNotIn('😍', result['cleaned_text'])
+        self.assertEqual(result['cleaning_statistics']['words_after'], result['word_count'])
+
+    def test_cli_dataset_export(self):
+        with tempfile.TemporaryDirectory() as folder:
+            inp, out = Path(folder) / 'source.csv', Path(folder) / 'cleaned.csv'
+            inp.write_text('id,text\n1,كِتاب عالی است\n2,کتاب عالی است\n', encoding='utf-8')
+            process = run_cli(str(inp), '--dataset', '--output', str(out), '--clean-preset',
+                              'general', '--remove-diacritics')
+            self.assertEqual(process.returncode, 0, process.stderr)
+            summary = json.loads(process.stdout)
+            self.assertEqual(summary['input'], 2)
+            self.assertEqual(summary['kept'], 1)
+            self.assertIn('کتاب عالی', out.read_text(encoding='utf-8'))
+
+    def test_cli_dataset_invalid_and_source_protection(self):
+        with tempfile.TemporaryDirectory() as folder:
+            inp = Path(folder) / 'input.csv'
+            inp.write_text('text\nسلام\n', encoding='utf-8')
+            failed = run_cli(str(inp), '--dataset', '--output', str(inp))
+            self.assertEqual(failed.returncode, 2)
+            self.assertEqual(inp.read_text(encoding='utf-8'), 'text\nسلام\n')
+        failed = run_cli('--text', 'Hello', '--reduce-elongations', '--keep-elongations')
+        self.assertEqual(failed.returncode, 2)
+
 
 if __name__ == '__main__':
     unittest.main()

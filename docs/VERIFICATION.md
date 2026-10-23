@@ -1,5 +1,8 @@
 # Verification record — v1.3.2
 
+> This historical log describes the Session 1 release. Version 2 session-two
+> checks are recorded in `docs/SESSION2_TO_SLIDE17.md` and the newer tests.
+
 Date: 2026-10-08. Python 3.12.14, Linux, PySide6 Essentials 6.8.3.
 
 ## Executed
