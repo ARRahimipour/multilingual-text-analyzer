@@ -22,7 +22,7 @@ class AnalyzerWindow(QWidget):
         self.input_path = None
         self.result = None
         self.font_size = 15
-        self.setWindowTitle('NLP Text Analyzer v2.0 | ARRahimipour')
+        self.setWindowTitle('NLP Text Analyzer v3.0 | ARRahimipour')
         self.resize(1260, 950)
         self.setMinimumSize(850, 720)
         families = {f.casefold(): f for f in QFontDatabase.families()}
@@ -42,10 +42,11 @@ class AnalyzerWindow(QWidget):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(12)
         title = QLabel('Language, counted.'); title.setObjectName('title'); layout.addWidget(title)
-        layout.addWidget(QLabel('NLP / SESSIONS 01–02 · Text cleaning, Unicode and frequency analysis'))
+        layout.addWidget(QLabel('NLP / FOUR HANDOUTS · Text analysis, cleaning, normalization and tokenization'))
         toolbar = QHBoxLayout(); layout.addLayout(toolbar)
         for name, callback in [('Open text', self.open_file), ('Load sample', self.load_sample),
                                ('Clean dataset', self.clean_dataset_file),
+                               ('Course Lab', self.open_course_lab),
                                ('Export report', self.export), ('Clear', self.clear)]:
             button = QPushButton(name); button.clicked.connect(callback); toolbar.addWidget(button)
         toolbar.addStretch(); toolbar.addWidget(QLabel('Text size'))
@@ -141,6 +142,11 @@ class AnalyzerWindow(QWidget):
         QShortcut(QKeySequence('Ctrl+O'), self, activated=self.open_file)
         QShortcut(QKeySequence('Ctrl+S'), self, activated=self.export)
         self.resize_text(0); self.refresh()
+
+    def open_course_lab(self):
+        from .lab_gui import CourseLab
+        self.course_lab = CourseLab(self.editor.toPlainText(), self)
+        self.course_lab.show()
 
     def resize_text(self, delta):
         self.font_size = max(11, min(24, self.font_size + delta))

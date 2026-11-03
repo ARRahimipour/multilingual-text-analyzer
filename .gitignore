@@ -13,3 +13,8 @@ dist/
 .idea/
 history.bundle
 *.zip
+
+.nlp_data/
+pip-metadata-*/
+pip-unpack-*/
+models/

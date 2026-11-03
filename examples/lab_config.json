@@ -1,0 +1,10 @@
+{
+  "normalization": {
+    "unicode_form": "NFKC",
+    "digit_style": "ascii",
+    "spacing": "conservative",
+    "expand_contractions": true,
+    "lexical_map": true,
+    "placeholders": true
+  }
+}

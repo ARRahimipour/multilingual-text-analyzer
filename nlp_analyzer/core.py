@@ -8,7 +8,7 @@ from .preprocessing import PreprocessOptions, clean_text
 JOINERS = {"'", "\u200c", "\u200d"}
 ENDINGS = set('.!?؟。！？।॥…։።')
 CLOSERS = set('\"\'”’»)]}」』')
-ABBREVIATIONS = {'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'st', 'vs', 'etc', 'e.g', 'i.e'}
+ABBREVIATIONS = {'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'st', 'vs', 'etc', 'e.g', 'i.e', 'u.s.a', 'u.s', 'u.k'}
 
 
 @dataclass(frozen=True)

@@ -56,7 +56,20 @@ def main(argv=None):
     dataset_group.add_argument('--near-duplicate', type=float, metavar='THRESHOLD')
     parser.add_argument('--format', choices=['text', 'json', 'csv', 'html'], default='text')
     parser.add_argument('--output', type=Path, help='Write UTF-8 output to this file')
+    lab_group = parser.add_argument_group('four-handout learning lab')
+    lab_group.add_argument('--lab', choices=['normalize', 'unicode', 'compare', 'subword', 'oov', 'batch', 'chunk', 'morphology', 'features', 'classify'])
+    lab_group.add_argument('--lab-config', type=Path, help='JSON object of lab options; see examples/lab_config.json')
+    lab_group.add_argument('--training-corpus', type=Path, help='UTF-8 text, one training document per line; labeled JSONL for classify')
+    lab_group.add_argument('--evaluation', type=Path, help='Separate labeled JSONL holdout for classify')
+    lab_group.add_argument('--tokenizer', choices=['bpe', 'wordpiece', 'unigram', 'sentencepiece'], default='bpe')
+    lab_group.add_argument('--vocab-size', type=positive_int, default=300)
+    lab_group.add_argument('--max-tokens', type=positive_int, default=128)
+    lab_group.add_argument('--overlap', type=int, default=16)
+    lab_group.add_argument('--model', type=Path, help='Local tokenizer JSON or SentencePiece .model')
+    lab_group.add_argument('--save-model', type=Path)
     args = parser.parse_args(argv)
+    if args.gui and args.lab:
+        parser.error('Use --lab separately from --gui.')
     if args.gui:
         try:
             from .gui import launch
@@ -65,7 +78,42 @@ def main(argv=None):
             parser.exit(2, f'Desktop interface unavailable: {exc}\nUse the CLI or install the desktop dependency: python -m pip install -r requirements-gui.txt\n')
         return 0
     try:
-        modifications = {'emoji_mode': args.emoji, 'punctuation_mode': args.punctuation,
+        if args.lab:
+            from .lab import run_lab, save_lab_report
+            if args.dataset or args.gui:
+                raise ValueError('Use --lab separately from --dataset or --gui.')
+            sources = [p.resolve() for p in (args.file, args.training_corpus, args.evaluation, args.model, args.lab_config) if p]
+            for output in (args.output, args.save_model):
+                if output and output.resolve() in sources:
+                    raise ValueError('Lab output must not overwrite an input or loaded model.')
+            if args.output and args.save_model and args.output.resolve() == args.save_model.resolve():
+                raise ValueError('Report and model destinations must be different.')
+            text = args.file.read_text(encoding='utf-8-sig') if args.file else args.text
+            if text is None:
+                if sys.stdin.isatty(): raise ValueError('Provide a file, --text or piped input for the lab.')
+                text = sys.stdin.read()
+            corpus = args.training_corpus.read_text(encoding='utf-8-sig').splitlines() if args.training_corpus else [text]
+            corpus = [line for line in corpus if line.strip()]
+            settings = dict(method=args.tokenizer, vocab_size=args.vocab_size,
+                            max_length=args.max_tokens, overlap=args.overlap)
+            if args.lab_config:
+                config = json.loads(args.lab_config.read_text(encoding='utf-8'))
+                if not isinstance(config, dict): raise ValueError('Lab config must be a JSON object.')
+                if any(key in config for key in ('model_file', 'save_model')):
+                    raise ValueError('Use --model and --save-model for file paths, not lab config.')
+                settings.update(config)
+            if args.model: settings['model_file'] = str(args.model)
+            if args.save_model: settings['save_model'] = str(args.save_model)
+            if args.lab == 'classify':
+                if not args.training_corpus: raise ValueError('Classification requires --training-corpus with labeled JSONL records.')
+                settings['training_records'] = [json.loads(row) for row in corpus]
+                if args.evaluation:
+                    settings['evaluation_records'] = [json.loads(row) for row in args.evaluation.read_text(encoding='utf-8').splitlines() if row.strip()]
+            result = run_lab(args.lab, text, corpus, **settings)
+            if args.output: save_lab_report(result, args.output)
+            else: print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+        modifications = {'emoji_mode' : args.emoji, 'punctuation_mode': args.punctuation,
                          'number_mode': args.number_mode, 'digit_style': args.digit_style,
                          'invisible_mode': args.invisible}
         modifications = {key: value for key, value in modifications.items() if value is not None}
@@ -119,7 +167,7 @@ def main(argv=None):
         for warning in result.warnings:
             print('Warning: ' + warning, file=sys.stderr)
         return 0
-    except (OSError, UnicodeError, ValueError) as exc:
+    except (OSError, UnicodeError, ValueError, ImportError, LookupError, TypeError) as exc:
         parser.exit(2, f'Error: {exc}\n')
 
 

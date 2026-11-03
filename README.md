@@ -1,6 +1,6 @@
 # NLP Text Analyzer
 
-A Python desktop app and CLI for text analysis **and optional, inspectable Session 2 preprocessing**: HTML/noise cleanup, multilingual Unicode, social text, privacy masking and dataset filtering.
+A local Python desktop application and CLI for the four supplied NLP handouts: text statistics, task-dependent cleaning, normalization, tokenization and inspectable corpus experiments. Version 3.0 adds a dedicated Course Lab with real local tokenizer training.
 
 The project started with the first-session NLP assignment: choose a 300-word text and extract sentence counts, vocabulary size, and the ten most frequent words. The application now accepts texts of any length. The original 300-word example is still included so there is an easy result to check against.
 
@@ -21,6 +21,36 @@ The project started with the first-session NLP assignment: choose a 300-word tex
 - Exports HTML, JSON, CSV, or a plain-text report.
 
 Text analysis runs locally. No text is sent to a service, and no language model or API key is needed.
+
+See [handout coverage](docs/HANDOUT_COVERAGE.md) for the implemented topics and [verification](docs/VERIFICATION_V3.md) for the 108-test record and remaining environment limits.
+
+## Course Lab: the new v3.0 workspace
+
+Open **Course Lab** from the main toolbar. Choose an activity, enter a query and load a separate training corpus where needed, then click **Run activity**. **Guide** opens the course explanations inside the application. **Details**, **Matrices** and **Full JSON** expose the results. Training runs in a background worker. Persian/Arabic paragraphs are aligned independently from English paragraphs.
+
+Activities include normalization with stage history and idempotence audit; Unicode inspection; eight tokenizer comparisons; BPE, WordPiece, Unigram and SentencePiece training; OOV; padding/masks; sentence-aware chunking; Persian/English morphology; N-grams, BoW, TF-IDF, cosine and Zipf; and labeled classification with optional holdout evaluation.
+
+The full setup installs `requirements-nlp.txt` as well as Qt. For a lab-only terminal installation, install `requirements-nlp.txt` into `.venv`. `setup_env.py --cli-only` creates a bare environment for the original dependency-free counting/cleaning CLI; it does not install the advanced lab libraries.
+
+Installation requires internet access or locally available wheels. All normal lab operations run locally afterward. Optional English WordNet lemmatization needs a one-time `python setup_resources.py` download using the activated environment; its absence does not affect the other activities. If the download is blocked by your network's security policy, use an approved local NLTK WordNet corpus under `.nlp_data/corpora/` or use stemming. No security policy is bypassed by the app.
+
+After activating `.venv`, try:
+
+```bash
+python main.py --lab normalize --text "می روم مدرسه" --lab-config examples/lab_config.json
+python main.py --lab compare --text "I love NLP!"
+python main.py --lab subword --text "سلام NLP" --training-corpus examples/lab_corpus.txt --tokenizer bpe --save-model models/bpe.json
+python main.py --lab chunk --text "First sentence. Second sentence." --model models/bpe.json --max-tokens 40 --overlap 6
+python main.py --lab features --text "" --training-corpus examples/lab_corpus.txt --output outputs/features.json
+python main.py --lab classify --text "A useful book" --training-corpus examples/classification_train.jsonl --evaluation examples/classification_holdout.jsonl
+python scripts/run_course_demo.py
+```
+
+Lab output is UTF-8 JSON, irrespective of the legacy `--format` option. Use `--output` to retain it. File paths use `--model` and `--save-model`, not config keys. Tokenizer files must end in `.json` (BPE/WordPiece/Unigram) or `.model` (SentencePiece). The vocabulary size is a training target and may be adjusted to fit the alphabet. A saved model is used until you click **Reset model**.
+
+`--lab-config` accepts an object of activity options. Examples: `{"language":"en","morph_method":"lemma","pos":"v"}`, `{"ngram":2}`, `{"side":"left","truncation":true}`, or `{"lexical_map":{"customword":"replacement"}}`. Normalization options are nested under `normalization`, as shown in the included example. The guide explains their effects and limits.
+
+No fixed word-count cap is imposed. Dense feature matrices, all-pairs similarities and training still consume memory; start with classroom-sized corpora. The table preview caps display rows at 1,000, while JSON retains all results. A local educational tokenizer is not a pretrained BERT/GPT tokenizer, and the conceptual model roadmap is not represented as deployed functionality.
 
 ## Setup
 
@@ -104,7 +134,7 @@ For command-line-only use, `python setup_env.py --cli-only` creates the environm
 
 ## Using the desktop
 
-Open the application with `python run_gui.py`. The window title should show **v2.0**.
+Open the application with `python run_gui.py`. The window title should show **v3.0**.
 
 1. Choose **Open text**, paste a passage, or select **Load sample**.
 2. Read the four totals above the editor and the frequency table on the right.
@@ -197,7 +227,7 @@ HTML bars are scaled against the most frequent word, not against the total word 
 
 ## How counting works
 
-Without a preset, the original Session 1 path stays unchanged: normalize the text, find sentence boundaries, extract tokens, and build a frequency table with `collections.Counter`. With cleaning enabled, a configurable cleaning pipeline runs first, and punctuation-sensitive sentence splitting uses a snapshot **before** destructive punctuation removal. Neither mode removes stopwords, stems words, or tries to infer meaning; those topics follow after slide 17.
+Without a preset, the original Session 1 path stays unchanged: normalize the text, find sentence boundaries, extract tokens, and build a frequency table with `collections.Counter`. With cleaning enabled, a configurable cleaning pipeline runs first, and punctuation-sensitive sentence splitting uses a snapshot **before** destructive punctuation removal. The main counting pipeline does not remove stopwords or apply morphology. Those are explicit activities in the new Course Lab, so their effects never silently change the assignment counts.
 
 A **word token** contains Unicode letters or numbers and their attached marks. Unless numbers are enabled, a token must contain at least one letter. Internal apostrophes and Persian joining characters are retained: `don't` and `می‌روم` each count as one token. Hyphens separate tokens, so `well-known` counts as two. With numeric counting enabled, `3.14` is two numeric tokens because the decimal point separates them; the sentence splitter still protects that decimal point.
 
@@ -211,7 +241,7 @@ These are explicit rules, not a full linguistic parser. Uncommon abbreviations, 
 
 The supplied lecture mentions Python and NLTK. This implementation uses the standard library for the covered cleaning and counting stages, so no tokenizer model downloads are needed. It is not an NLTK/Hazm model implementation. Approximate duplicate detection is a candidate-based heuristic, not a proof that train/test leakage is absent. PII masking is pattern-based; names and data in other dataset columns are not automatically anonymized. Source files and GUI input are kept unchanged; saving a report may include cleaned text and should be reviewed before sharing.
 
-See [Session 2 coverage through slide 17](docs/SESSION2_TO_SLIDE17.md) for all covered slide topics, design choices and limitations.
+See the [four-handout coverage map](docs/HANDOUT_COVERAGE.md) and [course guide](docs/COURSE_GUIDE.md) for the current scope. The older Session 2 document is retained as historical context.
 
 ## Tests
 
@@ -260,18 +290,24 @@ See [verification details](docs/VERIFICATION.md) and the captured [test output](
 
 ## Restoring the repository
 
-The supplied ZIP contains the `.git` directory itself, including the original
-commit history. Unzip it and run commands in the extracted project directory:
+The uploaded v2.0 ZIP contained no Git repository. This release starts a fresh history with an import commit, followed by the actual implementation and verification commits. All new commits use `ARRahimipour <arrahimipourdev@gmail.com>` and their real creation times. Earlier unavailable history has not been reconstructed.
+
+The release includes `history.bundle`. To restore it in a new directory:
 
 ```bash
-git status
-git log --oneline -5
-python setup_env.py
+git clone history.bundle nlp-text-analyzer
+cd nlp-text-analyzer
 ```
 
-The Session 2 changes are supplied as working-tree modifications; they are not
-committed to the original history. Existing commits retain their metadata.
-No remote repository has been created or pushed.
+Then run `python setup_env.py`. To publish to your own empty GitHub repository:
+
+```bash
+git remote remove origin
+git remote add origin https://github.com/ARRahimipour/YOUR_REPOSITORY.git
+git push -u origin main
+```
+
+No remote repository has been created or pushed. To apply the files to an existing repository, copy the source changes into a branch and review `git diff`; do not overwrite its `.git` directory or force-push unrelated history.
 
 For change and dependency workflows, see [development notes](docs/DEVELOPMENT.md).
 

@@ -1,0 +1,8 @@
+I love natural language processing and learning NLP.
+This book is good and this course is useful.
+Tokenization turns text into tokens and token IDs.
+We are learning normalization and text classification.
+سلام! من زبان فارسی را دوست دارم.
+کتاب های خوب برای یادگیری مفید هستند.
+من کتاب می خوانم و درباره پردازش زبان طبیعی یاد می گیرم.
+داده تمیز به تحلیل دقیق متن کمک می کند.

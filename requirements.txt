@@ -1,2 +1,3 @@
-# Install the complete desktop application inside .venv.
+# Complete desktop application and course lab. Tested with Python 3.12.
 -r requirements-gui.txt
+-r requirements-nlp.txt

@@ -1,3 +1,5 @@
+> Historical v2.0 scope. See HANDOUT_COVERAGE.md for the v3.0 four-handout implementation.
+
 # Session 2 implementation map — slides 1–17
 
 This release implements the **topics actually covered through slide 17** of the

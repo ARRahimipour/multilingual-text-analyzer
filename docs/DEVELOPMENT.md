@@ -4,7 +4,7 @@
 
 Use the project's `.venv` for both the application and tests. `setup_env.py` creates it with Python's `venv` module and does not enable system site packages. Dependencies are installed through that environment's interpreter.
 
-`requirements.txt` includes `requirements-gui.txt`. The Qt dependencies are pinned to 6.8.3, the version used for the desktop checks. There are no additional test packages; the suite uses `unittest`.
+`requirements.txt` includes `requirements-gui.txt` and `requirements-nlp.txt`. Advanced lab tests require the latter. The Qt dependencies are pinned to 6.8.3, the version used for the desktop checks. There are no additional test packages; the suite uses `unittest`.
 
 To update Qt, change both the Essentials and shiboken versions together, install into a fresh environment, and run the full suite. Render the Persian example in a narrow window as well as a wide one. A successful import alone does not verify text direction or line wrapping. Keep dependency updates separate from unrelated feature work.
 

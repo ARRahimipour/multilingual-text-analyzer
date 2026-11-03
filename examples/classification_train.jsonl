@@ -1,0 +1,6 @@
+{"text": "This book is useful and excellent", "label": "positive"}
+{"text": "I love this good course", "label": "positive"}
+{"text": "A wonderful helpful lesson", "label": "positive"}
+{"text": "This book is boring and bad", "label": "negative"}
+{"text": "I hate this terrible course", "label": "negative"}
+{"text": "A disappointing useless lesson", "label": "negative"}

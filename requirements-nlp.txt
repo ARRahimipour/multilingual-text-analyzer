@@ -1,0 +1,6 @@
+regex==2026.9.29
+tokenizers==0.23.3
+sentencepiece==0.2.2
+nltk==3.10.4
+hazm==0.12.1
+scikit-learn==1.9.1
