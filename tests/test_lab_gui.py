@@ -28,3 +28,14 @@ class LabGuiTests(unittest.TestCase):
         w.show_result({'vocabulary':['cat'],'bow':[[2]],'tfidf':[[1.0]]})
         self.assertIn('tfidf',w.matrices.toPlainText())
         w.close();w.deleteLater();self.app.processEvents()
+
+    def test_search_worker_and_options(self):
+        w=CourseLab('كتاب');w.corpus.setPlainText('کتاب فارسی\nغذا');w.operation.setCurrentText('search')
+        w.config_editor.setPlainText('{"top_k":1,"vectorizer":{"language":"fa"}}')
+        w.start();deadline=time.monotonic()+20
+        while w.thread.isRunning() and time.monotonic()<deadline:self.app.processEvents();time.sleep(.01)
+        self.app.processEvents();self.assertFalse(w.thread.isRunning())
+        self.assertEqual(w.last_result['queries'][0]['matches'][0]['document_index'],0)
+        self.assertIn('Search results',w.summary.toPlainText())
+        w.config_editor.setPlainText('invalid json');w.start();self.assertIn('Expecting value',w.status.text())
+        w.close();w.deleteLater();self.app.processEvents()

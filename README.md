@@ -1,3 +1,11 @@
+# Rebuilt v3.1.1 release
+
+This release restores the expanded 118-page handout activities after the earlier temporary download expired. It is based on the existing GitHub history at `f48d6a2`, with new real commits rather than reconstructed timestamps or hashes.
+
+Read [the expanded activity guide](docs/EXPANDED_LAB_GUIDE.md), [coverage review](docs/HANDOUT_REVIEW_118_PAGES.md), and [current verification](docs/VERIFICATION_V3.1.md). All 131 tests passed in this rebuild. Earlier documents remain historical records of their named versions.
+
+New activities: stopwords, pipeline, learn_stopwords, library_pipeline, representation, search and classify_compare. Open Course Lab and use Advanced options → Open JSON options to load an examples/*_config.json file. Run `python scripts/run_expanded_demo.py` for the expanded exercises.
+
 # NLP Text Analyzer
 
 A local Python desktop application and CLI for the four supplied NLP handouts: text statistics, task-dependent cleaning, normalization, tokenization and inspectable corpus experiments. Version 3.0 adds a dedicated Course Lab with real local tokenizer training.
@@ -134,7 +142,7 @@ For command-line-only use, `python setup_env.py --cli-only` creates the environm
 
 ## Using the desktop
 
-Open the application with `python run_gui.py`. The window title should show **v3.0**.
+Open the application with `python run_gui.py`. The window title should show **v3.1**.
 
 1. Choose **Open text**, paste a passage, or select **Load sample**.
 2. Read the four totals above the editor and the frequency table on the right.
@@ -290,24 +298,24 @@ See [verification details](docs/VERIFICATION.md) and the captured [test output](
 
 ## Restoring the repository
 
-The uploaded v2.0 ZIP contained no Git repository. This release starts a fresh history with an import commit, followed by the actual implementation and verification commits. All new commits use `ARRahimipour <arrahimipourdev@gmail.com>` and their real creation times. Earlier unavailable history has not been reconstructed.
+The release preserves existing GitHub history. New commits use `ARRahimipour <arrahimipourdev@gmail.com>` and actual creation times. The connected repository permission is read-only; no remote push was performed.
 
-The release includes `history.bundle`. To restore it in a new directory:
-
-```bash
-git clone history.bundle nlp-text-analyzer
-cd nlp-text-analyzer
-```
-
-Then run `python setup_env.py`. To publish to your own empty GitHub repository:
+Apply the supplied patch from a clean working tree in an existing clone:
 
 ```bash
-git remote remove origin
-git remote add origin https://github.com/ARRahimipour/YOUR_REPOSITORY.git
-git push -u origin main
+git switch -c handout-118-rebuilt
+git am --3way /path/to/handout-update.patch
+git push -u origin handout-118-rebuilt
 ```
 
-No remote repository has been created or pushed. To apply the files to an existing repository, copy the source changes into a branch and review `git diff`; do not overwrite its `.git` directory or force-push unrelated history.
+If conflicts occur, review them and use `git am --continue`, or cancel with `git am --abort`. Never overwrite your existing `.git` directory. To restore the complete prepared repository from the bundle:
+
+```bash
+git clone --branch codex/handout-118-rebuilt history.bundle restored-project
+cd restored-project
+python setup_env.py
+python run_gui.py
+```
 
 For change and dependency workflows, see [development notes](docs/DEVELOPMENT.md).
 

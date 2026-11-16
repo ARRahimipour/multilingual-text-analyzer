@@ -1,0 +1,11 @@
+{
+  "classifier": "logistic",
+  "random_state": 42,
+  "vectorizer": {
+    "language": "fa",
+    "ngram_min": 1,
+    "ngram_max": 2,
+    "min_df": 1,
+    "max_df": 1.0
+  }
+}

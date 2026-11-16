@@ -1,3 +1,5 @@
+> Historical 65-page coverage. See HANDOUT_REVIEW_118_PAGES.md for the expanded edition.
+
 # Coverage of the four supplied handouts
 
 Reference: the supplied `Binder1.pdf`, 65 PDF pages. Page numbers below are PDF page positions, not slide numbers. The PDF is not redistributed in this source release.

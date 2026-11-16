@@ -1,0 +1,11 @@
+{
+  "language": "fa",
+  "stopword_mode": "statistical",
+  "min_document_ratio": 0.75,
+  "max_idf": 0.3,
+  "min_frequency": 2,
+  "protected_words": [
+    "فیلم"
+  ],
+  "preserve_negation": true
+}

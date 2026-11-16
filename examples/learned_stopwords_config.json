@@ -1,0 +1,37 @@
+{
+  "language": "en",
+  "word_labels": [
+    {
+      "word": "the",
+      "label": 1
+    },
+    {
+      "word": "and",
+      "label": 1
+    },
+    {
+      "word": "of",
+      "label": 1
+    },
+    {
+      "word": "to",
+      "label": 1
+    },
+    {
+      "word": "cat",
+      "label": 0
+    },
+    {
+      "word": "dog",
+      "label": 0
+    },
+    {
+      "word": "bird",
+      "label": 0
+    },
+    {
+      "word": "fish",
+      "label": 0
+    }
+  ]
+}

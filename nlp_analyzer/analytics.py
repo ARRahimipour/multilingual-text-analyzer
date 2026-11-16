@@ -16,7 +16,7 @@ def hazm_morphology():
     return Stemmer(), Lemmatizer()
 
 
-def morphology(text, language='fa', method='stem', remove_stopwords=False, pos='n'):
+def morphology(text, language='fa', method='stem', remove_stopwords=False, pos='n', stemmer='porter'):
     tokens = words(text)
     if language == 'fa':
         from hazm import stopwords_list
@@ -29,9 +29,12 @@ def morphology(text, language='fa', method='stem', remove_stopwords=False, pos='
         if str(data_dir) not in nltk.data.path: nltk.data.path.insert(0, str(data_dir))
         # A standard library-provided list; no stopword corpus download is needed.
         from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-        from nltk.stem import PorterStemmer, WordNetLemmatizer
+        from nltk.stem import PorterStemmer, SnowballStemmer, LancasterStemmer, WordNetLemmatizer
         stops = set(ENGLISH_STOP_WORDS)
-        if method == 'stem': transform = PorterStemmer().stem
+        if method == 'stem':
+            choices = {'porter': PorterStemmer, 'snowball': lambda: SnowballStemmer('english'), 'lancaster': LancasterStemmer}
+            if stemmer not in choices: raise ValueError('Choose porter, snowball or lancaster.')
+            transform = choices[stemmer]().stem
         else:
             if pos not in ('n', 'v', 'a', 'r', 's'): raise ValueError('Invalid WordNet POS.')
             transform = lambda token: WordNetLemmatizer().lemmatize(token, pos=pos)

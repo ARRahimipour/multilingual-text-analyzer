@@ -57,7 +57,7 @@ def main(argv=None):
     parser.add_argument('--format', choices=['text', 'json', 'csv', 'html'], default='text')
     parser.add_argument('--output', type=Path, help='Write UTF-8 output to this file')
     lab_group = parser.add_argument_group('four-handout learning lab')
-    lab_group.add_argument('--lab', choices=['normalize', 'unicode', 'compare', 'subword', 'oov', 'batch', 'chunk', 'morphology', 'features', 'classify'])
+    lab_group.add_argument('--lab', choices=['normalize', 'unicode', 'compare', 'subword', 'oov', 'batch', 'chunk', 'morphology', 'features', 'classify', 'stopwords', 'pipeline', 'representation', 'search', 'classify_compare', 'learn_stopwords', 'library_pipeline'])
     lab_group.add_argument('--lab-config', type=Path, help='JSON object of lab options; see examples/lab_config.json')
     lab_group.add_argument('--training-corpus', type=Path, help='UTF-8 text, one training document per line; labeled JSONL for classify')
     lab_group.add_argument('--evaluation', type=Path, help='Separate labeled JSONL holdout for classify')
@@ -104,7 +104,7 @@ def main(argv=None):
                 settings.update(config)
             if args.model: settings['model_file'] = str(args.model)
             if args.save_model: settings['save_model'] = str(args.save_model)
-            if args.lab == 'classify':
+            if args.lab in ('classify', 'classify_compare'):
                 if not args.training_corpus: raise ValueError('Classification requires --training-corpus with labeled JSONL records.')
                 settings['training_records'] = [json.loads(row) for row in corpus]
                 if args.evaluation:

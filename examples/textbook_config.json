@@ -1,0 +1,7 @@
+{
+  "vectorizer": {
+    "language": "fa",
+    "idf_mode": "textbook",
+    "norm": "none"
+  }
+}

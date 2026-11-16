@@ -6,11 +6,36 @@ from .normalization import NormalizationOptions, normalization_audit, unicode_in
 from .tokenization import (compare_tokenizers, tokenize, SubwordModel, vocabulary_encode, prepare_batch, chunk_text)
 from .analytics import morphology, corpus_features, classify
 
-OPERATIONS = ('normalize', 'unicode', 'compare', 'subword', 'oov', 'batch', 'chunk', 'morphology', 'features', 'classify')
+OPERATIONS = ('normalize', 'unicode', 'compare', 'subword', 'oov', 'batch', 'chunk', 'morphology', 'features', 'classify', 'stopwords', 'pipeline', 'representation', 'search', 'classify_compare', 'learn_stopwords', 'library_pipeline')
 
 
 def run_lab(operation, text, corpus=None, **settings):
     corpus = corpus if corpus is not None else [text]
+    from .course_extensions import (stopword_activity, pipeline_comparison, representation,
+                                    search_documents, classification_comparison, learned_stopwords, library_pipeline)
+    vector_options = settings.get('vectorizer', {})
+    if not isinstance(vector_options, dict): raise ValueError('vectorizer options must be a JSON object.')
+    vector_options = dict(vector_options)
+    vector_options.setdefault('language', settings.get('language', 'fa'))
+    vector_options.setdefault('ngram_max', settings.get('ngram', 1))
+    if operation == 'library_pipeline':
+        return library_pipeline(text, settings.get('language', 'fa'), settings.get('morph_method', 'stem'), settings.get('pos', 'n'), settings.get('preserve_negation', True))
+    if operation == 'representation': return representation(corpus, **vector_options)
+    if operation == 'search': return search_documents(corpus, settings.get('queries', [text]), settings.get('top_k', 5), **vector_options)
+    if operation == 'classify_compare':
+        return classification_comparison(settings.get('training_records', []), settings.get('evaluation_records'), text,
+            settings.get('test_size', .25), settings.get('random_state', 42), settings.get('classifier', 'logistic'), **vector_options)
+    if operation == 'learn_stopwords':
+        return learned_stopwords(corpus, settings.get('word_labels', []), settings.get('language', 'fa'), settings.get('random_state', 42))
+    if operation in ('stopwords', 'pipeline'):
+        shared = dict(language=settings.get('language', 'fa'), custom_stopwords=settings.get('custom_stopwords'),
+                      protected_words=settings.get('protected_words'), preserve_negation=settings.get('preserve_negation', True))
+        if operation == 'stopwords':
+            return stopword_activity(text, corpus, stopword_mode=settings.get('stopword_mode', 'dictionary'),
+                min_document_ratio=settings.get('min_document_ratio', .8), max_idf=settings.get('max_idf', .3),
+                min_frequency=settings.get('min_frequency', 2), **shared)
+        return pipeline_comparison(text, morph_method=settings.get('morph_method', 'stem'),
+                                  stemmer=settings.get('stemmer', 'porter'), pos=settings.get('pos', 'n'), **shared)
     if operation == 'normalize':
         config = settings.get('normalization', {})
         return normalization_audit(text, NormalizationOptions(**config), settings.get('lexical_map'))
@@ -47,7 +72,7 @@ def run_lab(operation, text, corpus=None, **settings):
     if operation == 'oov': return vocabulary_encode(corpus, text, int(settings.get('vocab_size', 1000)))
     if operation == 'morphology':
         return morphology(text, settings.get('language', 'fa'), settings.get('morph_method', 'stem'),
-                          settings.get('stopwords', False), settings.get('pos', 'n'))
+                          settings.get('stopwords', False), settings.get('pos', 'n'), settings.get('stemmer', 'porter'))
     if operation == 'features': return corpus_features(corpus, int(settings.get('ngram', 1)))
     if operation == 'classify': return classify(settings.get('training_records', []), text, settings.get('evaluation_records'))
     raise ValueError('Unknown lab operation: ' + operation)

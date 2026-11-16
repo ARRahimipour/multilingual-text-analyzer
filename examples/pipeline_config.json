@@ -1,0 +1,8 @@
+{
+  "language": "fa",
+  "morph_method": "stem",
+  "protected_words": [
+    "فیلم"
+  ],
+  "preserve_negation": true
+}

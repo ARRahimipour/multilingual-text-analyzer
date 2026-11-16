@@ -1,3 +1,7 @@
+# v3.1.1 reconstruction — 2026-11-16
+
+Restores expanded handout activities after temporary release files expired: stopword policies and word-label learning, four-stage frequency comparison, actual library pipelines, sparse representations, textbook TF-IDF, retrieval and classifier comparisons. Adds configuration UI, Persian examples, tests and documentation. Existing repository history is preserved; new commits use real timestamps.
+
 # Changelog
 
 ## 2.0.0 — Session 2 through slide 17

@@ -30,7 +30,7 @@ class Worker(QObject):
 class CourseLab(QDialog):
     def __init__(self, text='', parent=None):
         super().__init__(parent)
-        self.setWindowTitle('Course Lab v3.0 · Normalization and Tokenization')
+        self.setWindowTitle('Course Lab v3.1 · Preprocessing and Text Representation')
         self.resize(1240, 860)
         self.last_result = None; self.thread = None; self.model_path = None; self.input_paths = set()
         self.evaluation_records = None
@@ -86,6 +86,12 @@ class CourseLab(QDialog):
         self.table = QTableWidget(); self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers); self.tabs.addTab(self.table, 'Details')
         self.matrices = QTextEdit(); self.matrices.setReadOnly(True); self.tabs.addTab(self.matrices, 'Matrices')
         self.json_view = QTextEdit(); self.json_view.setReadOnly(True); self.tabs.addTab(self.json_view, 'Full JSON')
+        self.config_editor = QTextEdit(); self.config_editor.setAcceptRichText(False); self.config_editor.setPlainText('{}')
+        option_panel = QWidget(); option_layout = QVBoxLayout(option_panel)
+        option_layout.addWidget(QLabel('JSON settings override controls above. Open an examples/*_config.json file.'))
+        open_options = QPushButton('Open JSON options'); open_options.clicked.connect(self.load_options)
+        option_layout.addWidget(open_options); option_layout.addWidget(self.config_editor)
+        self.tabs.addTab(option_panel, 'Advanced options')
         self.status = QLabel('Ready. Normalization preserves a source copy and records each stage.'); self.status.setWordWrap(True); layout.addWidget(self.status)
         self.operation.currentTextChanged.connect(self.activity_changed)
         for editor in (self.input, self.corpus): editor.textChanged.connect(lambda e=editor: self.align(e))
@@ -104,6 +110,13 @@ class CourseLab(QDialog):
     def activity_changed(self):
         op = self.operation.currentText()
         descriptions = {
+            'library_pipeline': 'Run actual Hazm/NLTK stages. English needs optional local resources.',
+            'stopwords': 'Dictionary, custom or statistical stopwords; protect negation and domain terms with Advanced options.',
+            'pipeline': 'Compare top ten words in raw, normalized, stopword-filtered and morphological stages.',
+            'representation': 'Sparse BoW and TF-IDF: choose textbook or smoothed IDF in Advanced options.',
+            'search': 'Rank documents by cosine similarity. Input is the query; corpus is fitted once.',
+            'classify_compare': 'Compare BoW and TF-IDF on the same holdout. Corpus must be labeled JSONL.',
+            'learn_stopwords': 'Random Forest word-label experiment. Supply word_labels in Advanced options.',
             'normalize': 'Compare every normalization stage and check whether a second pass changes the result.',
             'unicode': 'Inspect code points, UTF-8 bytes, grapheme clusters and all four Unicode forms.',
             'compare': 'Run whitespace, regex, Unicode, character, grapheme, NLTK and Hazm tokenizers.',
@@ -127,16 +140,22 @@ class CourseLab(QDialog):
             side=self.side.currentText(), stopwords=self.flags['stopwords'].isChecked(),
             use_subword=self.flags['use_subword'].isChecked(), truncation=self.flags['truncation'].isChecked())
         if self.model_path: settings['model_file'] = str(self.model_path)
+        overrides = json.loads(self.config_editor.toPlainText() or '{}')
+        if not isinstance(overrides, dict): raise ValueError('Advanced options must be a JSON object.')
+        if any(k in overrides for k in ('save_model', 'model_file')): raise ValueError('Use the model buttons for file paths.')
+        settings.update(overrides)
         return settings
 
     def start(self, save_to=None):
         if self.thread and self.thread.isRunning(): return
-        op = self.operation.currentText(); settings = self.settings()
+        op = self.operation.currentText()
+        try: settings = self.settings()
+        except (ValueError, TypeError) as exc: self.show_error(str(exc)); return
         corpus = [row for row in self.corpus.toPlainText().splitlines() if row.strip()]
-        if (op in ('oov', 'batch', 'features', 'classify') or (op in ('subword', 'chunk') and not self.model_path and (op == 'subword' or settings['use_subword']))) and not corpus:
+        if (op in ('oov', 'batch', 'features', 'classify', 'representation', 'search', 'classify_compare', 'learn_stopwords', 'stopwords') or (op in ('subword', 'chunk') and not self.model_path and (op == 'subword' or settings['use_subword']))) and not corpus:
             QMessageBox.warning(self, 'Corpus needed', 'Paste or open separate training documents first.'); return
         if save_to: settings['save_model'] = str(save_to)
-        if op == 'classify':
+        if op in ('classify', 'classify_compare'):
             try: settings['training_records'] = [json.loads(row) for row in corpus]
             except ValueError as exc: QMessageBox.warning(self, 'Invalid JSONL', str(exc)); return
             settings['evaluation_records'] = self.evaluation_records
@@ -153,7 +172,7 @@ class CourseLab(QDialog):
     def show_result(self, result):
         self.last_result = result
         matrix_lines = []
-        for key in ('vocabulary', 'document_frequency', 'idf', 'bow', 'tfidf', 'cosine_similarity', 'input_ids', 'attention_mask'):
+        for key in ('vocabulary', 'document_frequency', 'idf', 'bow', 'tfidf', 'cosine_similarity', 'input_ids', 'attention_mask', 'bow_csr', 'tfidf_csr'):
             if key in result: matrix_lines.append(key + ':\n' + json.dumps(result[key], ensure_ascii=False, indent=2))
         self.matrices.setPlainText('\n\n'.join(matrix_lines) or 'This activity does not produce a matrix.')
         self.json_view.setPlainText(json.dumps(result, ensure_ascii=False, indent=2))
@@ -165,6 +184,7 @@ class CourseLab(QDialog):
         if 'unknown_tokens' in result: lines.append('Unknown tokens: ' + ', '.join(result['unknown_tokens']))
         if 'chunks' in result: lines += [f"Chunk {i}: {row['text']} ({row['token_count']} tokens)" for i, row in enumerate(result['chunks'], 1)]
         if 'comparisons' in result: lines += [f"{r['method']}: {r.get('count', 'unavailable')} tokens\n{r.get('tokens', r.get('error'))}" for r in result['comparisons']]
+        if 'queries' in result: lines.append('Search results:\n' + json.dumps(result['queries'], ensure_ascii=False, indent=2))
         if 'evaluation' in result: lines.append('Holdout evaluation: ' + str(result['evaluation']))
         self.summary.setPlainText('\n\n'.join(lines)); self.align(self.summary)
         rows = next((result[key] for key in ('stages', 'comparisons', 'rows', 'characters', 'zipf', 'chunks') if key in result), [])
@@ -193,11 +213,25 @@ class CourseLab(QDialog):
         dialog = QDialog(self); dialog.setWindowTitle('Four-handout course guide'); dialog.resize(900, 700)
         layout = QVBoxLayout(dialog); browser = QTextBrowser(); layout.addWidget(browser)
         path = Path(__file__).resolve().parents[1] / 'docs' / 'COURSE_GUIDE.md'
-        browser.setMarkdown(path.read_text(encoding='utf-8'))
+        browser.setMarkdown(path.read_text(encoding='utf-8') + '\n\n' + (path.parent / 'EXPANDED_LAB_GUIDE.md').read_text(encoding='utf-8'))
         dialog.show()
+
+    def load_options(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'Open activity options', '', 'JSON (*.json)')
+        if path:
+            try:
+                config = json.loads(Path(path).read_text(encoding='utf-8-sig'))
+                if not isinstance(config, dict): raise ValueError('Options must be a JSON object.')
+                self.config_editor.setPlainText(json.dumps(config, ensure_ascii=False, indent=2))
+                self.input_paths.add(Path(path).resolve())
+            except (OSError, ValueError) as exc: self.show_error(str(exc))
 
     def load_sample(self):
         path = Path(__file__).resolve().parents[1] / 'examples' / 'lab_corpus.txt'
+        op = self.operation.currentText()
+        if op in ('representation', 'stopwords'): path = path.with_name('representation_fa.txt')
+        elif op == 'search': path = path.with_name('search_fa.txt')
+        elif op in ('classify', 'classify_compare'): path = path.with_name('classification_fa_train.jsonl')
         if path.is_file(): self.corpus.setPlainText(path.read_text(encoding='utf-8'))
         self.input.setPlainText('سلام! من کتاب ها را می خوانم. I love learning NLP!')
         self.model_path = None; self.model_label.setText('Model: train locally from the corpus')
