@@ -1,0 +1,19 @@
+{
+  "language": "en",
+  "cleaning_preset": "general",
+  "tokenizer": "regex",
+  "normalization": {
+    "unicode_form": "NFKC",
+    "persian_letters": false,
+    "digit_style": "ascii",
+    "remove_marks": false,
+    "spacing": "none",
+    "casefold": true
+  },
+  "remove_stopwords": true,
+  "stopword_mode": "custom",
+  "custom_stopwords": ["the", "were", "and", "are"],
+  "preserve_negation": true,
+  "morph_method": "stem",
+  "stemmer": "porter"
+}

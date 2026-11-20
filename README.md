@@ -1,3 +1,24 @@
+# LEXIS Research Studio v5 — Responsive Six-Stage NLP Laboratory
+
+**Desktop update:** A responsive, vertically scrollable research workspace now fits the current monitor's *available work area*. Six stages are selected through a visible two- or three-column button grid rather than a narrow horizontal-scroll list. This applies to the main window and the dedicated six-stage dialog, including laptops and high-DPI display scaling.
+
+**Academic case library:** Eight Persian research fixtures and one English baseline are selectable directly from **Test case → Load case**. The inputs cover HTML, URLs, emojis, sentiment, negation, Persian Unicode, half-spaces, morphological variants, stopwords, frequency counts, synthetic entity data, informal writing and PDF extraction noise. Case labels, explanations, stage documentation and guides are in English; original Persian fixture text remains Persian so it can actually be processed.
+
+**Handout alignment:** The pipeline follows Session 2's page-27 flowchart: **Raw Input → Cleaning → Normalization → Tokenization → Optional Stopwords → Stemming OR Lemmatization**. It preserves all stage snapshots, detailed counts and the JSON audit.
+
+**Quick start** (Python 3.10+):
+
+```bash
+python setup_env.py
+python run_gui.py
+```
+
+Select **06 / Six-stage pipeline** and click **Load case**. To reproduce a case in a minimal environment without Hazm, choose Regex tokenization, Conservative spacing and None for morphology; install Hazm for complete Persian model-backed steps.
+
+Documentation: [Six-stage guide](docs/SIX_STAGE_PIPELINE.md) · [Persian test suite in English](docs/PERSIAN_TEST_CASES_EN.md) · [Professor's English quick guide](docs/PROFESSOR_QUICK_GUIDE_EN.md).
+
+---
+
 # Rebuilt v3.1.1 release
 
 This release restores the expanded 118-page handout activities after the earlier temporary download expired. It is based on the existing GitHub history at `f48d6a2`, with new real commits rather than reconstructed timestamps or hashes.

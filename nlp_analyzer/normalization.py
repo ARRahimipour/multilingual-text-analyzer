@@ -29,6 +29,23 @@ class NormalizationOptions:
                 raise ValueError(f'Invalid {field}: {getattr(self, field)}')
 
 
+# A deliberately small collection of unspaced forms. Broad rules such as
+# splitting EVERY word ending with ها break common words (e.g. تنها).
+# Hazm mode is recommended for broader Persian morphology-aware correction.
+_SAFE_PLURAL_BASES = (
+    'کتاب', 'متن', 'کلمه', 'واژه', 'جمله', 'دانشجو', 'دانشگاه',
+    'داده', 'مدل', 'پروژه', 'صفحه', 'نویسه', 'فیلم', 'کاربر',
+    'فایل', 'مثال', 'درخت', 'خانه', 'گزارش', 'آزمایش',
+)
+_SAFE_VERB_ENDINGS = (
+    'روم', 'روی', 'رود', 'رویم', 'روید', 'روند',
+    'خوانم', 'خوانی', 'خواند', 'خوانیم', 'خوانید', 'خوانند',
+    'خواهم', 'خواهی', 'خواهد', 'خواهیم', 'خواهید', 'خواهند',
+    'دانم', 'دانی', 'داند', 'دانیم', 'دانید', 'دانند',
+    'توانم', 'توانی', 'تواند', 'توانیم', 'توانید', 'توانند',
+)
+
+
 @lru_cache(maxsize=1)
 def hazm_normalizer():
     from hazm import Normalizer
@@ -75,13 +92,29 @@ def normalize(source, options=None, custom_map=None):
     if options.spacing == 'hazm': step('Hazm normalization', lambda t: hazm_normalizer().normalize(t))
     elif options.spacing == 'conservative':
         def spacing(t):
-            t = re.sub('\u200c{2,}', '\u200c', t)
+            # Keep genuine U+200C inside Persian words. Remove redundant and
+            # malformed whitespace around a legitimate existing half-space.
+            t = re.sub(r'\u200c{2,}', '\u200c', t)
             t = re.sub(r'[ \t]*\u200c[ \t]*', '\u200c', t)
-            # Only separated prefixes/suffixes are repaired; never split a word like میز.
-            t = re.sub(r'(?<!\w)(ن?می)[ \t]+(?=[\u0621-\u06ff])', r'\1\u200c'.replace('\\u200c', '\u200c'), t)
-            t = re.sub(r'(?<=[\u0621-\u06ff])[ \t]+(ها|های|تر|ترین|ام)(?![\w\u200c])', '\u200c' + r'\1', t)
+            # A separated verbal prefix, e.g. می روم / نمی دانم.
+            t = re.sub(r'(?<![\w\u200c])(ن?می)[ \t]+(?=[\u0621-\u06ff])',
+                       lambda m: m.group(1) + '\u200c', t)
+            # Separated Persian plural / comparative suffixes; avoid treating
+            # the first-person copula «ام» as a general plural suffix.
+            t = re.sub(r'(?<=[\u0621-\u06ff])[ \t]+(ها|های|تر|ترین)(?![\w\u200c])',
+                       lambda m: '\u200c' + m.group(1), t)
+            # Carefully scoped common words typed WITHOUT any half-space.
+            # No universal "word+ها" rewrite: e.g. تنها must remain untouched.
+            plurals = '|'.join(re.escape(word) for word in sorted(_SAFE_PLURAL_BASES, key=len, reverse=True))
+            t = re.sub(r'(?<![\w\u200c])(' + plurals + r')(های|ها)(?![\w\u200c])',
+                       lambda m: m.group(1) + '\u200c' + m.group(2), t)
+            verbs = '|'.join(re.escape(v) for v in sorted(_SAFE_VERB_ENDINGS, key=len, reverse=True))
+            t = re.sub(r'(?<![\w\u200c])(ن?می)(' + verbs + r')(?![\w\u200c])',
+                       lambda m: m.group(1) + '\u200c' + m.group(2), t)
+            # Standard spacing around Persian/ASCII punctuation.
             t = re.sub(r'[ \t]+([،؛؟!?.,])', r'\1', t)
-            t = re.sub(r'([،؛؟!?])(?=[^\s»”\"\'])', r'\1 ', t)
+            # Preserve runs such as !!! and ؟!; do not insert spaces inside them.
+            t = re.sub(r'([،؛؟!?])(?=[^\s»”"\'،؛؟!?])', r'\1 ', t)
             return t
         step('Conservative spacing', spacing)
     if options.placeholders:

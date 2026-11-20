@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, Q
 from .lab import OPERATIONS, run_lab, save_lab_report
 from .direction import text_direction
 from .tokenization import SUBWORD_METHODS
+from .six_stage_pipeline import NAMES
 
 
 class Worker(QObject):
@@ -28,10 +29,12 @@ class Worker(QObject):
 
 
 class CourseLab(QDialog):
-    def __init__(self, text='', parent=None):
+    def __init__(self, text='', parent=None, default_operation=None):
         super().__init__(parent)
-        self.setWindowTitle('Course Lab v3.1 · Preprocessing and Text Representation')
+        self.setWindowTitle('LEXIS · Advanced Research Lab')
         self.resize(1240, 860)
+        from .theme import STYLE
+        self.setStyleSheet(STYLE)
         self.last_result = None; self.thread = None; self.model_path = None; self.input_paths = set()
         self.evaluation_records = None
         layout = QVBoxLayout(self)
@@ -72,6 +75,20 @@ class CourseLab(QDialog):
             ('use_subword', 'Subwords for batch/chunks', False), ('truncation', 'Allow truncation', True)]):
             checkbox = QCheckBox(label); checkbox.setChecked(checked); self.flags[key] = checkbox
             grid.addWidget(checkbox, 4 + i // 6, i % 6)
+        six_controls = QGroupBox('Six-stage pipeline · Session 2 of the course handout')
+        six_grid = QGridLayout(six_controls)
+        self.six_cleaning = QComboBox(); self.six_cleaning.addItems(['general', 'sentiment', 'topic', 'ner', 'transformer', 'spam'])
+        self.six_tokenizer = QComboBox(); self.six_tokenizer.addItems(['auto', 'regex', 'hazm', 'nltk'])
+        self.six_stop_mode = QComboBox(); self.six_stop_mode.addItems(['dictionary', 'custom', 'statistical'])
+        self.six_remove_stops = QCheckBox('Remove stopwords (optional)'); self.six_remove_stops.setChecked(True)
+        self.six_preserve_negation = QCheckBox('Keep negation words'); self.six_preserve_negation.setChecked(True)
+        for i, (name, widget) in enumerate([('Cleaning preset', self.six_cleaning),
+                  ('Sentence/word tokenizer', self.six_tokenizer), ('Stopword method', self.six_stop_mode)]):
+            six_grid.addWidget(QLabel(name), 0, i); six_grid.addWidget(widget, 1, i)
+        six_grid.addWidget(self.six_remove_stops, 0, 3)
+        six_grid.addWidget(self.six_preserve_negation, 1, 3)
+        layout.addWidget(six_controls)
+        self.six_controls = six_controls
         self.model_label = QLabel('Model: train locally from the corpus (no remote model download)'); layout.addWidget(self.model_label)
         splitter = QSplitter(); layout.addWidget(splitter, 1)
         left = QWidget(); inputs = QVBoxLayout(left); inputs.setContentsMargins(0, 0, 6, 0)
@@ -92,10 +109,23 @@ class CourseLab(QDialog):
         open_options = QPushButton('Open JSON options'); open_options.clicked.connect(self.load_options)
         option_layout.addWidget(open_options); option_layout.addWidget(self.config_editor)
         self.tabs.addTab(option_panel, 'Advanced options')
+        self.six_step_tabs = QTabWidget()
+        self.six_step_views = []
+        for key, title, en in NAMES:
+            view = QTextEdit(); view.setReadOnly(True); view.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+            self.six_step_tabs.addTab(view, en)
+            self.six_step_views.append(view)
+        self.tabs.addTab(self.six_step_tabs, '6 stage snapshots')
         self.status = QLabel('Ready. Normalization preserves a source copy and records each stage.'); self.status.setWordWrap(True); layout.addWidget(self.status)
         self.operation.currentTextChanged.connect(self.activity_changed)
+        self.language.currentTextChanged.connect(self.six_language_changed)
         for editor in (self.input, self.corpus): editor.textChanged.connect(lambda e=editor: self.align(e))
-        self.align(self.input); self.activity_changed()
+        self.align(self.input)
+        if default_operation is not None:
+            if default_operation not in OPERATIONS:
+                raise ValueError('Unknown default operation: ' + default_operation)
+            self.operation.setCurrentText(default_operation)
+        self.activity_changed()
 
     def align(self, editor):
         editor.blockSignals(True)
@@ -107,9 +137,24 @@ class CourseLab(QDialog):
             cursor = QTextCursor(block); cursor.setBlockFormat(fmt); block = block.next()
         editor.blockSignals(False)
 
+    def six_language_changed(self, _language=None):
+        if self.operation.currentText() == 'six_stages':
+            fa = self.language.currentText() == 'fa'
+            self.spacing.setCurrentText('hazm' if fa else 'none')
+            self.flags['persian_letters'].setChecked(fa)
+            self.flags['casefold'].setChecked(not fa)
+
     def activity_changed(self):
         op = self.operation.currentText()
+        if op == 'six_stages' and not getattr(self, 'six_initialized', False):
+            self.six_initialized = True
+            self.spacing.setCurrentText('hazm' if self.language.currentText() == 'fa' else 'none')
+            self.digits.setCurrentText('ascii')
+            self.flags['remove_marks'].setChecked(True)
+            self.flags['persian_letters'].setChecked(self.language.currentText() == 'fa')
+            self.flags['casefold'].setChecked(self.language.currentText() == 'en')
         descriptions = {
+            'six_stages': 'Six distinct, sequential snapshots: raw → cleaning → normalization → tokenization → optional stopwords → stemming OR lemmatization. Export all evidence as JSON.',
             'library_pipeline': 'Run actual Hazm/NLTK stages. English needs optional local resources.',
             'stopwords': 'Dictionary, custom or statistical stopwords; protect negation and domain terms with Advanced options.',
             'pipeline': 'Compare top ten words in raw, normalized, stopword-filtered and morphological stages.',
@@ -128,6 +173,7 @@ class CourseLab(QDialog):
             'features': 'Compute Bag-of-Words, TF-IDF, cosine similarity, N-grams and Zipf rank statistics.',
             'classify': 'Train TF-IDF + Naive Bayes on labeled JSONL. Holdout is separate; no training-set accuracy.'}
         self.note.setText(descriptions[op])
+        self.six_controls.setVisible(op == 'six_stages')
 
     def settings(self):
         norm = {key: self.flags[key].isChecked() for key in ('persian_letters', 'remove_marks', 'arabic_variants',
@@ -139,6 +185,12 @@ class CourseLab(QDialog):
             morph_method=self.morph_method.currentText(), pos=self.pos.currentText(), ngram=self.ngram.value(),
             side=self.side.currentText(), stopwords=self.flags['stopwords'].isChecked(),
             use_subword=self.flags['use_subword'].isChecked(), truncation=self.flags['truncation'].isChecked())
+        if self.operation.currentText() == 'six_stages':
+            settings.update(cleaning_preset=self.six_cleaning.currentText(),
+                tokenizer=self.six_tokenizer.currentText(),
+                stopword_mode=self.six_stop_mode.currentText(),
+                remove_stopwords=self.six_remove_stops.isChecked(),
+                preserve_negation=self.six_preserve_negation.isChecked())
         if self.model_path: settings['model_file'] = str(self.model_path)
         overrides = json.loads(self.config_editor.toPlainText() or '{}')
         if not isinstance(overrides, dict): raise ValueError('Advanced options must be a JSON object.')
@@ -152,7 +204,9 @@ class CourseLab(QDialog):
         try: settings = self.settings()
         except (ValueError, TypeError) as exc: self.show_error(str(exc)); return
         corpus = [row for row in self.corpus.toPlainText().splitlines() if row.strip()]
-        if (op in ('oov', 'batch', 'features', 'classify', 'representation', 'search', 'classify_compare', 'learn_stopwords', 'stopwords') or (op in ('subword', 'chunk') and not self.model_path and (op == 'subword' or settings['use_subword']))) and not corpus:
+        if (op in ('oov', 'batch', 'features', 'classify', 'representation', 'search', 'classify_compare', 'learn_stopwords', 'stopwords')
+            or (op == 'six_stages' and settings.get('stopword_mode') == 'statistical' and settings.get('remove_stopwords', True))
+            or (op in ('subword', 'chunk') and not self.model_path and (op == 'subword' or settings['use_subword']))) and not corpus:
             QMessageBox.warning(self, 'Corpus needed', 'Paste or open separate training documents first.'); return
         if save_to: settings['save_model'] = str(save_to)
         if op in ('classify', 'classify_compare'):
@@ -186,6 +240,33 @@ class CourseLab(QDialog):
         if 'comparisons' in result: lines += [f"{r['method']}: {r.get('count', 'unavailable')} tokens\n{r.get('tokens', r.get('error'))}" for r in result['comparisons']]
         if 'queries' in result: lines.append('Search results:\n' + json.dumps(result['queries'], ensure_ascii=False, indent=2))
         if 'evaluation' in result: lines.append('Holdout evaluation: ' + str(result['evaluation']))
+        if result.get('pipeline_version') == 'handout-six-stages':
+            lines = ['SIX-STAGE TEXT PREPROCESSING',
+                'Each stage uses the previous output. Raw text stays untouched.']
+            for i, stage in enumerate(result['stages']):
+                block = [f"Stage {i + 1}: {stage['english']}",
+                         'Output:\n' + stage['output']]
+                if 'sentence_count' in stage:
+                    block.append('Sentences: ' + str(stage['sentence_count']) + '\n' +
+                                 '\n'.join(stage['sentences']))
+                if 'tokens' in stage:
+                    block.append('Tokens: ' + str(stage['token_count']) +
+                                 ' | Unique types: ' + str(stage['type_count']))
+                    block.append('Top 10: ' + ', '.join(
+                        str(r['word']) + '(' + str(r['count']) + ')' for r in stage['top_10']))
+                if 'removed_tokens' in stage:
+                    block.append('Removed stopwords: ' + str(stage['removed_tokens']))
+                if 'mappings' in stage:
+                    block.append('Token-to-base mapping:\n' + '\n'.join(
+                        r['token'] + ' ← ' + r['result'] for r in stage['mappings']))
+                if 'idempotent' in stage:
+                    block.append('Idempotent after second pass: ' + str(stage['idempotent']))
+                self.six_step_views[i].setPlainText('\n\n'.join(block))
+                self.align(self.six_step_views[i])
+                lines.append('\n'.join(block))
+            self.tabs.setCurrentWidget(self.six_step_tabs)
+        else:
+            for view in self.six_step_views: view.clear()
         self.summary.setPlainText('\n\n'.join(lines)); self.align(self.summary)
         rows = next((result[key] for key in ('stages', 'comparisons', 'rows', 'characters', 'zipf', 'chunks') if key in result), [])
         if not rows and 'tokens' in result:

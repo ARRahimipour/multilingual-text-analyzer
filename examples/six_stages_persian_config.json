@@ -1,0 +1,27 @@
+{
+  "language": "fa",
+  "cleaning_preset": "general",
+  "tokenizer": "hazm",
+  "cleaning": {
+    "remove_html": true,
+    "remove_urls": true,
+    "remove_emails": true,
+    "emoji_mode": "remove",
+    "strip_hashtags": true,
+    "punctuation_mode": "normalize",
+    "collapse_whitespace": true
+  },
+  "normalization": {
+    "unicode_form": "NFKC",
+    "persian_letters": true,
+    "digit_style": "ascii",
+    "remove_marks": true,
+    "spacing": "hazm",
+    "elongation": "language-aware"
+  },
+  "remove_stopwords": true,
+  "stopword_mode": "dictionary",
+  "preserve_negation": true,
+  "protected_words": ["NLP", "Python", "کتاب"],
+  "morph_method": "stem"
+}

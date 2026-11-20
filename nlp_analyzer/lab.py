@@ -6,13 +6,20 @@ from .normalization import NormalizationOptions, normalization_audit, unicode_in
 from .tokenization import (compare_tokenizers, tokenize, SubwordModel, vocabulary_encode, prepare_batch, chunk_text)
 from .analytics import morphology, corpus_features, classify
 
-OPERATIONS = ('normalize', 'unicode', 'compare', 'subword', 'oov', 'batch', 'chunk', 'morphology', 'features', 'classify', 'stopwords', 'pipeline', 'representation', 'search', 'classify_compare', 'learn_stopwords', 'library_pipeline')
+OPERATIONS = ('normalize', 'unicode', 'compare', 'subword', 'oov', 'batch', 'chunk', 'morphology', 'features', 'classify', 'stopwords', 'pipeline', 'representation', 'search', 'classify_compare', 'learn_stopwords', 'library_pipeline', 'six_stages')
 
 
 def run_lab(operation, text, corpus=None, **settings):
     corpus = corpus if corpus is not None else [text]
     from .course_extensions import (stopword_activity, pipeline_comparison, representation,
                                     search_documents, classification_comparison, learned_stopwords, library_pipeline)
+    if operation == 'six_stages':
+        from .six_stage_pipeline import run_six_stage_pipeline
+        return run_six_stage_pipeline(text, corpus, **{k: v for k, v in settings.items()
+            if k in {'language', 'cleaning_preset', 'cleaning', 'normalization', 'tokenizer',
+                     'remove_stopwords', 'stopword_mode', 'custom_stopwords', 'protected_words',
+                     'preserve_negation', 'min_document_ratio', 'max_idf', 'min_frequency',
+                     'morph_method', 'stemmer', 'pos', 'english_stopword_library'}})
     vector_options = settings.get('vectorizer', {})
     if not isinstance(vector_options, dict): raise ValueError('vectorizer options must be a JSON object.')
     vector_options = dict(vector_options)

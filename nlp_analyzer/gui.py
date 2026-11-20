@@ -3,11 +3,11 @@ from pathlib import Path
 from dataclasses import replace
 import sys
 from PySide6.QtCore import Qt, QTimer, QSignalBlocker
-from PySide6.QtGui import QFont, QFontDatabase, QTextCursor, QKeySequence, QShortcut
+from PySide6.QtGui import QFont, QFontDatabase, QTextCursor, QKeySequence, QShortcut, QGuiApplication
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QCheckBox, QTextEdit, QTableWidget, QTableWidgetItem,
     QHeaderView, QSplitter, QFileDialog, QMessageBox, QAbstractItemView,
-    QComboBox, QGroupBox, QGridLayout, QInputDialog)
+    QComboBox, QGroupBox, QGridLayout, QInputDialog, QFrame, QScrollArea)
 from .core import AnalysisOptions, analyze
 from .dataset import clean_dataset
 from .preprocessing import PRESET_NAMES, preset
@@ -22,44 +22,69 @@ class AnalyzerWindow(QWidget):
         self.input_path = None
         self.result = None
         self.font_size = 15
-        self.setWindowTitle('NLP Text Analyzer v3.1 | ARRahimipour')
-        self.resize(1260, 950)
-        self.setMinimumSize(850, 720)
+        self.setWindowTitle('LEXIS Research Studio | NLP Text Analyzer')
+        available = (QGuiApplication.primaryScreen().availableGeometry()
+                     if QGuiApplication.primaryScreen() else None)
+        self.setMinimumSize(530, 380)
+        if available:
+            w = min(1390, max(530, available.width() - 32))
+            h = min(800, max(380, available.height() - 60))
+            self.resize(w, h)
+            self.move(available.x() + (available.width() - w)//2,
+                      available.y() + (available.height() - h)//2)
+        else:
+            self.resize(1100, 700)
         families = {f.casefold(): f for f in QFontDatabase.families()}
         self.family = next((families[f.casefold()] for f in ('Tahoma', 'Segoe UI', 'Arial')
                             if f.casefold() in families), QApplication.font().family())
-        self.setStyleSheet('''
-            QWidget { background:#f2f5f9; color:#192637; }
-            QLabel#title { font-size:32px; font-weight:bold; }
-            QLabel#metric { font-size:30px; font-weight:bold; color:#176b61; }
-            QPushButton { padding:8px 12px; border:1px solid #ccd6e0; border-radius:5px; }
-            QPushButton:hover { background:#e1eaeF; }
-            QTextEdit, QTableWidget { background:white; border:1px solid #d7e0e8; }
-            QTableWidget { alternate-background-color:#f2f6fa; }
-            QHeaderView::section { padding:9px; background:#e6edf2; border:0; font-weight:bold; }
-        ''')
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(12)
-        title = QLabel('Language, counted.'); title.setObjectName('title'); layout.addWidget(title)
-        layout.addWidget(QLabel('NLP / FOUR HANDOUTS · Text analysis, cleaning, normalization and tokenization'))
-        toolbar = QHBoxLayout(); layout.addLayout(toolbar)
-        for name, callback in [('Open text', self.open_file), ('Load sample', self.load_sample),
+        from .theme import STYLE
+        self.setStyleSheet(STYLE)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        outer.addWidget(scroll)
+        page = QWidget()
+        scroll.setWidget(page)
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(8)
+        layout.addWidget(QLabel('LEXIS  /  NLP RESEARCH WORKSPACE'))
+        title = QLabel('Language, understood.'); title.setObjectName('title'); layout.addWidget(title)
+        subtitle = QLabel('TEXT ANALYTICS  /  Six-stage preprocessing  /  Explainable, local experiments')
+        subtitle.setObjectName('subtitle'); layout.addWidget(subtitle)
+        toolbar = QGridLayout()
+        toolbar.setSpacing(6)
+        layout.addLayout(toolbar)
+        actions = [('Open text', self.open_file), ('Load sample', self.load_sample),
                                ('Clean dataset', self.clean_dataset_file),
                                ('Course Lab', self.open_course_lab),
-                               ('Export report', self.export), ('Clear', self.clear)]:
-            button = QPushButton(name); button.clicked.connect(callback); toolbar.addWidget(button)
-        toolbar.addStretch(); toolbar.addWidget(QLabel('Text size'))
-        for name, delta in [('A+', 1), ('A−', -1)]:
-            button = QPushButton(name); button.clicked.connect(lambda checked=False, d=delta: self.resize_text(d))
-            toolbar.addWidget(button)
-        options = QHBoxLayout(); layout.addLayout(options)
+                               ('06  /  Six-stage pipeline', self.open_six_stage_pipeline),
+                               ('Export report', self.export), ('Clear', self.clear)]
+        for i, (name, callback) in enumerate(actions):
+            button = QPushButton(name)
+            button.clicked.connect(callback)
+            toolbar.addWidget(button, i // 4, i % 4)
+            if name.startswith('06  /'):
+                button.setObjectName('primary')
+        toolbar.addWidget(QLabel('Text size'), 1, 3)
+        for i, (name, delta) in enumerate([('A+', 1), ('A−', -1)]):
+            button = QPushButton(name)
+            button.clicked.connect(lambda checked=False, d=delta: self.resize_text(d))
+            toolbar.addWidget(button, 2, i)
+        options = QGridLayout(); options.setSpacing(7); layout.addLayout(options)
         self.case = QCheckBox('Case sensitive')
         self.persian = QCheckBox('Persian letter normalization')
         self.numbers = QCheckBox('Include numbers')
-        for option in (self.case, self.persian, self.numbers):
-            options.addWidget(option); option.toggled.connect(self.refresh)
-        options.addStretch()
+        for i, option in enumerate((self.case, self.persian, self.numbers)):
+            options.addWidget(option, 0, i)
+            option.toggled.connect(self.refresh)
+        self.toggle_cleaning = QPushButton('Advanced cleaning  ▾')
+        self.toggle_cleaning.setCheckable(True)
+        self.toggle_cleaning.setToolTip('Show task-dependent cleaning choices; the original input is always preserved.')
+        self.toggle_cleaning.toggled.connect(self.toggle_advanced_cleaning)
+        options.addWidget(self.toggle_cleaning, 1, 0, 1, 2)
         cleaning_box = QGroupBox('Session 2 · task-dependent cleaning (raw input is never changed)')
         cleaning_grid = QGridLayout(cleaning_box)
         self.clean_preset = QComboBox()
@@ -73,8 +98,9 @@ class AnalyzerWindow(QWidget):
                   ('Punctuation', self.punctuation_mode), ('Numbers', self.number_mode),
                   ('Digits', self.digit_style), ('Invisibles', self.invisible_mode)]
         for index, (name, widget) in enumerate(combos):
-            cleaning_grid.addWidget(QLabel(name), 0, index)
-            cleaning_grid.addWidget(widget, 1, index)
+            row, col = divmod(index, 3)
+            cleaning_grid.addWidget(QLabel(name), row * 2, col)
+            cleaning_grid.addWidget(widget, row * 2 + 1, col)
         self.mask_pii = QCheckBox('Mask PII')
         self.keep_urls = QCheckBox('Keep URLs')
         self.keep_mentions = QCheckBox('Keep mentions')
@@ -90,19 +116,26 @@ class AnalyzerWindow(QWidget):
                          self.remove_diacritics, self.join_lines, self.collapse_punct,
                          self.reduce_elongations, self.remove_retweets]
         for index, widget in enumerate(self.advanced[5:]):
-            cleaning_grid.addWidget(widget, 2 + index // 7, index % 7)
+            cleaning_grid.addWidget(widget, 4 + index // 3, index % 3)
         layout.addWidget(cleaning_box)
+        cleaning_box.setVisible(False)
+        self.advanced_cleaning_box = cleaning_box
         self.clean_preset.currentIndexChanged.connect(self.change_preset)
         for widget in self.advanced:
             if isinstance(widget, QComboBox): widget.currentIndexChanged.connect(self.refresh)
             else: widget.toggled.connect(self.refresh)
         self.change_preset()
-        metrics = QHBoxLayout(); layout.addLayout(metrics); self.metric_labels = []
+        metrics = QHBoxLayout(); metrics.setSpacing(11); layout.addLayout(metrics); self.metric_labels = []
         for name in ('Sentences', 'Words', 'Unique words', 'Appear once'):
-            box = QVBoxLayout(); value = QLabel('0'); value.setObjectName('metric')
-            box.addWidget(value); box.addWidget(QLabel(name)); metrics.addLayout(box, 1)
+            metric_card = QFrame(); metric_card.setObjectName('metricCard')
+            box = QVBoxLayout(metric_card); box.setContentsMargins(18, 9, 18, 10); box.setSpacing(1)
+            value = QLabel('0'); value.setObjectName('metric')
+            caption = QLabel(name.upper()); caption.setObjectName('metricCaption')
+            box.addWidget(value); box.addWidget(caption); metrics.addWidget(metric_card, 1)
             self.metric_labels.append(value)
-        panels = QSplitter(Qt.Orientation.Horizontal); layout.addWidget(panels, 1)
+        panels = QSplitter(Qt.Orientation.Horizontal)
+        panels.setMinimumHeight(320)
+        layout.addWidget(panels, 1)
         left = QWidget(); left_layout = QVBoxLayout(left); left_layout.setContentsMargins(0, 0, 8, 0)
         left_layout.addWidget(QLabel('INPUT TEXT · UTF-8'))
         self.editor = QTextEdit()
@@ -131,10 +164,10 @@ class AnalyzerWindow(QWidget):
         self.table.setColumnWidth(0, 65); self.table.setColumnWidth(2, 85)
         right_layout.addWidget(self.table); panels.addWidget(right); panels.setSizes([660, 420])
         self.status = QLabel(); self.status.setWordWrap(True); layout.addWidget(self.status)
-        layout.addWidget(QLabel('Offline analysis · Cleaning is opt-in · Sentence detection occurs before punctuation removal.'))
-        author = QLabel('<b>' + AUTHOR_LINES[0] + '</b><br>' + '<br>'.join(AUTHOR_LINES[1:3]) +
-                        f'<br><a href="mailto:{AUTHOR_EMAIL}">{AUTHOR_EMAIL}</a>' +
-                        f'<br><a href="https://{AUTHOR_WEBSITE}">{AUTHOR_WEBSITE}</a>')
+        hint = QLabel('01  Paste text    →    02  Open Six-stage pipeline    →    03  Inspect every transformation and export the audit')
+        hint.setObjectName('hint'); layout.addWidget(hint)
+        author = QLabel('<b>' + AUTHOR_LINES[0] + '</b>  ·  ' + AUTHOR_LINES[1] +
+                        f'  ·  <a href="https://{AUTHOR_WEBSITE}">{AUTHOR_WEBSITE}</a>')
         author.setOpenExternalLinks(True); author.setWordWrap(True); layout.addWidget(author)
         self.timer = QTimer(self); self.timer.setSingleShot(True); self.timer.setInterval(180)
         self.timer.timeout.connect(self.refresh)
@@ -142,6 +175,15 @@ class AnalyzerWindow(QWidget):
         QShortcut(QKeySequence('Ctrl+O'), self, activated=self.open_file)
         QShortcut(QKeySequence('Ctrl+S'), self, activated=self.export)
         self.resize_text(0); self.refresh()
+
+    def toggle_advanced_cleaning(self, enabled):
+        self.advanced_cleaning_box.setVisible(enabled)
+        self.toggle_cleaning.setText('Advanced cleaning  ▴' if enabled else 'Advanced cleaning  ▾')
+
+    def open_six_stage_pipeline(self):
+        from .six_stage_gui import SixStageStudio
+        self.six_studio = SixStageStudio(self.editor.toPlainText(), self)
+        self.six_studio.show()
 
     def open_course_lab(self):
         from .lab_gui import CourseLab

@@ -1,0 +1,6 @@
+The researchers were running experiments, and the children were studying different books.
+The cats were sleeping while the students were writing, reading, and testing new models.
+Good results were not guaranteed: no model is always accurate, and preprocessing is task-dependent.
+I did not enjoy the film, but I did appreciate its soundtrack.
+Contact hello@example.org, browse https://example.org, or inspect <p>HTML text</p> before tokenization.
+Stemming maps running to run and cats to cat for some stemmers; lemmatization depends on the chosen POS.
